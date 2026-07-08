@@ -1,0 +1,12 @@
+{
+  "name": "future-journalist-game",
+  "version": "1.0.0",
+  "private": true,
+  "description": "إعلامي المستقبل - Future Journalist Interactive Training Platform",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
