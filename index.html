@@ -259,7 +259,7 @@
         <button class="btn" id="day-btn-2" onclick="startDay(2)">🎥 اليوم 2: مهندس استوديو البث</button>
         <button class="btn" id="day-btn-3" onclick="startDay(3)">🕹️ اليوم 3: كابتن طيران الدرون</button>
         <button class="btn" id="day-btn-4" onclick="startDay(4)">🤖 اليوم 4: كاشف ومولد الـ AI</button>
-        <button class="btn btn-gold" onclick="enterGoldGame()" style="margin-top:20px;">🏆⚡ الذهب من كهوت</button>
+        <button class="btn btn-gold" id="btn-gold" onclick="enterGoldGame()" style="margin-top:20px;">🏆⚡ الذهب من كهوت</button>
         <button class="btn btn-back" onclick="switchScreen('screen-main')">⬅️ الرجوع للرئيسية</button>
     </div>
 
@@ -533,24 +533,29 @@ const DAY4_ACTIVITIES = [
 // ===================================================================
 let currentUser = null, currentScore = 0, dayActivities = [], dayIndex = 0, dayTotal = 0, dayId = 0, sliderInterval = null, currentDayResults = {};
 let _localDB = {};
+let _useServer = true;
+
+function saveToLocal() { localStorage.setItem('sba_kids_db', JSON.stringify(_localDB)); }
+function loadFromLocal() { try { _localDB = JSON.parse(localStorage.getItem('sba_kids_db')) || {}; } catch { _localDB = {}; } }
 
 async function syncFromServer() {
-    try { let r = await fetch('/api/students'); _localDB = await r.json(); } catch { _localDB = {}; }
+    if (!_useServer) { loadFromLocal(); return; }
+    try { let r = await fetch('/api/students', { cache:'no-store' }); _localDB = await r.json(); }
+    catch { _useServer = false; loadFromLocal(); }
 }
 function getDB() { return _localDB; }
 function getStudent(name) { let d = getDB(); return d[name] || { score:0, days:{} }; }
 function saveStudent(name, data) {
-    let d = getDB();
-    d[name] = data;
-    fetch('/api/student', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, ...data}) }).catch(()=>{});
+    let d = getDB(); d[name] = data; saveToLocal();
+    if (_useServer) fetch('/api/student', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, ...data}) }).catch(()=>{ _useServer=false; });
 }
 function deleteStudentAPI(name) {
-    delete _localDB[name];
-    fetch('/api/student/'+encodeURIComponent(name), { method:'DELETE' }).catch(()=>{});
+    delete _localDB[name]; saveToLocal();
+    if (_useServer) fetch('/api/student/'+encodeURIComponent(name), { method:'DELETE' }).catch(()=>{ _useServer=false; });
 }
 async function deleteAllAPI() {
-    _localDB = {};
-    try { await fetch('/api/all', { method:'DELETE' }); } catch {}
+    _localDB = {}; saveToLocal();
+    if (_useServer) try { await fetch('/api/all', { method:'DELETE' }); } catch { _useServer=false; }
 }
 
 // ===================================================================
@@ -2065,6 +2070,10 @@ loadDisplay = function() {
     await syncFromServer();
     let path = window.location.pathname.replace(/\/+$/, '');
     let params = new URLSearchParams(window.location.search);
+
+    // Hide gold button when server unavailable
+    let goldBtn = document.getElementById('btn-gold');
+    if(goldBtn) goldBtn.style.display = (!_useServer || path==='/admin' || params.has('display')) ? 'none' : 'block';
 
     if(path === '/admin') {
         switchScreen('screen-admin');
