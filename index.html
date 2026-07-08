@@ -173,6 +173,46 @@
         #display-leaderboard .dl-rank { font-weight:800; color:var(--color-foreground); min-width:40px; }
         #display-leaderboard .dl-name { flex:1; text-align:right; padding:0 12px; font-weight:700; }
         #display-leaderboard .dl-score { font-weight:800; color:var(--color-primary); direction:ltr; unicode-bidi:embed; }
+
+        /* === GOLD ROUND (الذهب من كهوت) === */
+        .gold-section { margin-top:20px; border-top:3px solid var(--color-border); padding-top:20px; width:100%; max-width:700px; }
+        .gold-q { font-size:1.8rem; font-weight:800; color:var(--color-primary); margin-bottom:20px; line-height:1.5; }
+        .gold-opts { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+        .gold-opt { padding:18px; border:3px solid var(--color-border); border-radius:var(--radius-md); background:var(--color-card); cursor:pointer; font-size:1.1rem; font-weight:700; transition:all 0.15s; text-align:center; box-shadow:var(--shadow-sm); }
+        .gold-opt:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+        .gold-opt.correct { border-color:var(--color-success); background:#d1fae5; }
+        .gold-opt.wrong { border-color:var(--color-destructive); background:#fee2e2; }
+        .gold-opt.selected { transform:scale(0.95); }
+        .gold-opt:disabled { opacity:0.5; cursor:default; transform:none !important; }
+        .gold-timer { font-size:3rem; font-weight:800; color:var(--color-primary); direction:ltr; unicode-bidi:embed; }
+        .gold-timer.urgent { color:var(--color-destructive); animation:pulse 0.5s infinite; }
+        .gold-winner { padding:20px; background:linear-gradient(135deg,#fef3c7,#fffbeb); border:3px solid #f59e0b; border-radius:var(--radius-lg); text-align:center; font-size:1.5rem; font-weight:800; color:#92400e; margin:16px 0; }
+        .gold-choice-btns { display:flex; flex-direction:column; gap:12px; margin:16px 0; }
+        .gold-choice-btn { padding:16px; border:none; border-radius:var(--radius-md); font-size:1.1rem; font-weight:700; cursor:pointer; transition:all 0.15s; text-align:center; }
+        .gold-choice-btn.gc-deduct { background:#fee2e2; color:#991b1b; border:3px solid var(--color-primary); }
+        .gold-choice-btn.gc-steal { background:#fef3c7; color:#92400e; border:3px solid #f59e0b; }
+        .gold-choice-btn.gc-secure { background:#d1fae5; color:#065f46; border:3px solid var(--color-success); }
+        .gold-choice-btn:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+        .gold-choice-btn:active { transform:translateY(2px); }
+        .gold-result { padding:20px; border-radius:var(--radius-lg); text-align:center; font-size:1.3rem; font-weight:700; margin:16px 0; }
+        .gold-result.deduct { background:#fee2e2; border:3px solid var(--color-primary); color:#991b1b; }
+        .gold-result.steal { background:#fef3c7; border:3px solid #f59e0b; color:#92400e; }
+        .gold-result.secure { background:#d1fae5; border:3px solid var(--color-success); color:#065f46; }
+        .gold-waiting { padding:20px; text-align:center; font-size:1.3rem; opacity:0.7; }
+        .gold-start-btn { font-size:1.5rem; padding:24px; }
+        .gold-badge { display:inline-block; background:linear-gradient(135deg,#f59e0b,#d97706); color:white; padding:4px 16px; border-radius:20px; font-size:0.8rem; font-weight:700; margin-bottom:8px; }
+        .gold-target-select { width:100%; padding:14px; border:3px solid var(--color-border); border-radius:var(--radius-md); font-size:1.1rem; background:var(--color-card); margin-bottom:12px; text-align:center; }
+        .gold-confirm-btn { padding:14px 30px; background:var(--color-accent); color:white; border:none; border-radius:var(--radius-md); font-weight:700; font-size:1.1rem; cursor:pointer; }
+        .gold-confirm-btn:hover { transform:translateY(-2px); }
+        .gold-student-wrap { text-align:center; padding:20px 0; }
+        .gold-student-wrap .gold-q { font-size:1.4rem; }
+        .gold-student-wrap .gold-opt { padding:14px; font-size:1rem; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+        /* === student gold overlay === */
+        #screen-gold { text-align:center; }
+        #screen-gold.active ~ .screen { display:none; }
+        .gold-notify { background:linear-gradient(135deg,#f59e0b,#d97706); color:white; border-radius:var(--radius-md); padding:12px; margin-bottom:12px; font-weight:700; }
     </style>
 </head>
 <body>
@@ -219,6 +259,7 @@
         <button class="btn" id="day-btn-2" onclick="startDay(2)">🎥 اليوم 2: مهندس استوديو البث</button>
         <button class="btn" id="day-btn-3" onclick="startDay(3)">🕹️ اليوم 3: كابتن طيران الدرون</button>
         <button class="btn" id="day-btn-4" onclick="startDay(4)">🤖 اليوم 4: كاشف ومولد الـ AI</button>
+        <button class="btn btn-gold" onclick="enterGoldGame()" style="margin-top:20px;">🏆⚡ الذهب من كهوت</button>
         <button class="btn btn-back" onclick="switchScreen('screen-main')">⬅️ الرجوع للرئيسية</button>
     </div>
 
@@ -249,6 +290,13 @@
         <button class="btn btn-back" onclick="switchScreen('screen-main')">⬅️ الرجوع للرئيسية</button>
     </div>
 
+    <!-- ===== SCREEN: GOLD ROUND (الذهب من كهوت) for students ===== -->
+    <div id="screen-gold" class="screen">
+        <div id="gold-notify" class="gold-notify" style="display:none;">🏆 الذهب من كهوت</div>
+        <div id="gold-student-content" class="gold-student-wrap"></div>
+        <button class="btn btn-back" onclick="leaveGoldGame()" style="margin-top:16px;">⬅️ خروج من اللعبة</button>
+    </div>
+
     <!-- ===== SCREEN: DISPLAY / PROJECTOR ===== -->
     <div id="screen-display" class="screen">
         <div id="display-inner" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;text-align:center;">
@@ -262,6 +310,10 @@
             </div>
             <h2 style="font-size:1.8rem;color:var(--color-accent);margin-bottom:16px;">🏆 لوحة المتصدرين</h2>
             <div id="display-leaderboard" style="width:100%;max-width:700px;min-height:200px;"></div>
+            <!-- GOLD ROUND SECTION (display) -->
+            <div id="display-gold-section" class="gold-section" style="display:none;">
+                <div id="display-gold-content"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -1738,6 +1790,267 @@ function loadDisplay() {
         </div>`;
     }).join('');
 }
+
+// ===================================================================
+//  GOLD ROUND (الذهب من كهوت)
+// ===================================================================
+let _goldPoll = null, _goldStudentPoll = null;
+
+// --- Student enters gold game ---
+function enterGoldGame() {
+    if(_goldStudentPoll) clearInterval(_goldStudentPoll);
+    switchScreen('screen-gold');
+    pollGoldStudent();
+    _goldStudentPoll = setInterval(pollGoldStudent, 1500);
+}
+
+function leaveGoldGame() {
+    if(_goldStudentPoll) { clearInterval(_goldStudentPoll); _goldStudentPoll = null; }
+    switchScreen('screen-hub');
+}
+
+async function pollGoldStudent() {
+    try {
+        let r = await fetch('/api/game');
+        let state = await r.json();
+        renderGoldStudent(state);
+    } catch {}
+}
+
+function renderGoldStudent(state) {
+    let wrap = document.getElementById('gold-student-content');
+    let notify = document.getElementById('gold-notify');
+
+    if(state.phase === 'idle') {
+        wrap.innerHTML = `<div class="gold-waiting">⏳ المعلّم لم يبدأ الجولة بعد...<br><small>انتظر حتى يبدأ المعلّم لعبة الذهب من كهوت</small></div>`;
+        notify.style.display = 'none';
+        return;
+    }
+    notify.style.display = 'block';
+    notify.textContent = `🏆 الذهب من كهوت - الجولة ${state.round}`;
+
+    let timeLeft = state.timerSec - Math.floor((Date.now() - state.startAt) / 1000);
+    if(timeLeft < 0) timeLeft = 0;
+    let timerClass = timeLeft <= 5 ? 'gold-timer urgent' : 'gold-timer';
+
+    if(state.phase === 'question') {
+        let opts = state.options.map((o, i) =>
+            `<button class="gold-opt" onclick="goldStudentAnswer(${i})" id="gopt-${i}">${o}</button>`
+        ).join('');
+        wrap.innerHTML = `
+            <div class="gold-q">${state.question}</div>
+            <div class="${timerClass}" id="gold-student-timer">⏱ ${timeLeft}</div>
+            <div class="gold-opts">${opts}</div>
+        `;
+        // Timer countdown
+        if(window._goldStudentTimer) clearInterval(window._goldStudentTimer);
+        window._goldStudentTimer = setInterval(() => {
+            let t = state.timerSec - Math.floor((Date.now() - state.startAt) / 1000);
+            let el = document.getElementById('gold-student-timer');
+            if(el) { el.textContent = '⏱ ' + Math.max(0,t);
+                el.className = t <= 5 ? 'gold-timer urgent' : 'gold-timer'; }
+            if(t <= 0) clearInterval(window._goldStudentTimer);
+        }, 500);
+    }
+
+        if(state.phase === 'answered') {
+            if(window._goldStudentTimer) clearInterval(window._goldStudentTimer);
+            if(state.winner === currentUser) {
+                let db = getDB();
+                let others = Object.keys(db).filter(n => n !== currentUser);
+                let secure = state.securePlayers.includes(currentUser);
+                let targetOpts = others.map(n => `<option value="${n}">${n} (${db[n].score||0} نقطة)</option>`).join('');
+                wrap.innerHTML = `
+                    <div class="gold-winner">🎉 أنت الفائز! اختر الآن:</div>
+                    <div class="gold-choice-btns">
+                        <button class="gold-choice-btn gc-deduct" onclick="goldStudentChoice('deduct')">🗡️ خصم 30 نقطة من لاعب</button>
+                        <button class="gold-choice-btn gc-steal" onclick="goldStudentChoice('steal')">💰 سرقة نقاط من لاعب</button>
+                        ${!secure ? '<button class="gold-choice-btn gc-secure" onclick="goldStudentChoice(\'secure\')">🔒 تأمين المركز الأول</button>' : ''}
+                    </div>
+                    <div id="gold-target-wrap" style="display:none;margin-top:12px;">
+                        <p style="font-size:0.9rem;margin-bottom:6px;">اختر اللاعب:</p>
+                        <select class="gold-target-select" id="gold-target-select">${targetOpts}</select>
+                        <button class="gold-confirm-btn" onclick="goldStudentChoiceConfirm()">✅ تأكيد</button>
+                    </div>
+                `;
+            } else {
+                wrap.innerHTML = `<div class="gold-waiting">⏳ ${state.winner} فاز بالجولة! ينتظر حتى يختار...</div>`;
+            }
+        }
+
+    if(state.phase === 'choice') {
+        wrap.innerHTML = `<div class="gold-waiting">⏳ ${state.winner} يختار الآن...</div>`;
+    }
+
+    if(state.phase === 'result') {
+        if(window._goldStudentTimer) clearInterval(window._goldStudentTimer);
+        let cls = 'gold-result';
+        if(state.choiceMade) {
+            if(state.choiceMade.action === 'deduct') cls += ' deduct';
+            else if(state.choiceMade.action === 'steal') cls += ' steal';
+            else if(state.choiceMade.action === 'secure') cls += ' secure';
+        }
+        wrap.innerHTML = `
+            <div class="${cls}">${state.resultMsg}</div>
+            <div class="gold-waiting">🔄 المعلّم سيبدأ الجولة القادمة قريباً...</div>
+        `;
+    }
+}
+
+async function goldStudentAnswer(idx) {
+    document.querySelectorAll('.gold-opt').forEach(b => b.disabled = true);
+    try {
+        let r = await fetch('/api/game/answer', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ name: currentUser, answer: idx })
+        });
+        let res = await r.json();
+        if(!res.ok && res.reason === 'already_answered') {
+            document.getElementById('gold-student-content').innerHTML +=
+                '<div style="color:var(--color-warning);font-size:0.9rem;margin-top:8px;">✅ سبق وأجبت!</div>';
+        }
+        setTimeout(pollGoldStudent, 500);
+    } catch {}
+}
+
+let _pendingGoldAction = null;
+
+function goldStudentChoice(action) {
+    _pendingGoldAction = action;
+    if(action === 'secure') {
+        goldStudentChoiceConfirm();
+        return;
+    }
+    let wrap = document.getElementById('gold-target-wrap');
+    if(wrap) wrap.style.display = 'block';
+}
+
+async function goldStudentChoiceConfirm() {
+    let targetEl = document.getElementById('gold-target-select');
+    let target = targetEl ? targetEl.value : currentUser;
+    if(!_pendingGoldAction) return;
+    if(_pendingGoldAction !== 'secure' && !target) { alert('اختر لاعباً أولاً!'); return; }
+    try {
+        let r = await fetch('/api/game/choice', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ name: currentUser, action: _pendingGoldAction, target })
+        });
+        let res = await r.json();
+        if(res.ok) setTimeout(pollGoldStudent, 500);
+    } catch {}
+}
+
+// --- Display view gold game ---
+async function pollGoldDisplay() {
+    try {
+        let r = await fetch('/api/game');
+        let state = await r.json();
+        renderGoldDisplay(state);
+    } catch {}
+}
+
+function renderGoldDisplay(state) {
+    let section = document.getElementById('display-gold-section');
+    let content = document.getElementById('display-gold-content');
+    if(!section || !content) return;
+
+    if(state.phase === 'idle') {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = 'block';
+
+    let timeLeft = state.timerSec - Math.floor((Date.now() - state.startAt) / 1000);
+    if(timeLeft < 0) timeLeft = 0;
+    let timerClass = timeLeft <= 5 ? 'gold-timer urgent' : 'gold-timer';
+
+    if(state.phase === 'question') {
+        let correctIdx = state.correctIndex;
+        let opts = state.options.map((o, i) =>
+            `<div class="gold-opt" id="dg-opt-${i}">${o}</div>`
+        ).join('');
+        content.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span class="gold-badge">🏆 الجولة ${state.round}</span>
+                <div class="${timerClass}">⏱ ${timeLeft}</div>
+            </div>
+            <div class="gold-q">${state.question}</div>
+            <div class="gold-opts">${opts}</div>
+            <div style="font-size:0.9rem;opacity:0.6;">👥 ${state.answerCount} أجابوا</div>
+        `;
+        // Countdown
+        if(window._goldDisplayTimer) clearInterval(window._goldDisplayTimer);
+        window._goldDisplayTimer = setInterval(() => {
+            let t = state.timerSec - Math.floor((Date.now() - state.startAt) / 1000);
+            let el = document.getElementById('dg-timer');
+            if(el) { el.textContent = '⏱ ' + Math.max(0,t);
+                el.className = t <= 5 ? 'gold-timer urgent' : 'gold-timer'; }
+            if(t <= 0) clearInterval(window._goldDisplayTimer);
+        }, 500);
+    }
+
+    if(state.phase === 'answered' || state.phase === 'choice') {
+        if(window._goldDisplayTimer) clearInterval(window._goldDisplayTimer);
+        // Show correct answer
+        document.querySelectorAll('.gold-opt').forEach((el, i) => {
+            if(i === state.correctIndex) el.classList.add('correct');
+            else el.classList.add('wrong');
+        });
+        content.innerHTML += `
+            <div class="gold-winner">🏆 الفائز: ${state.winner} 🎉</div>
+            <div class="gold-waiting">⏳ ${state.winner} يختار الآن...</div>
+        `;
+    }
+
+    if(state.phase === 'result') {
+        if(window._goldDisplayTimer) clearInterval(window._goldDisplayTimer);
+        if(state.correctIndex >= 0) {
+            document.querySelectorAll('.gold-opt').forEach((el, i) => {
+                if(i === state.correctIndex) el.classList.add('correct');
+                else el.classList.add('wrong');
+            });
+        }
+        let cls = 'gold-result';
+        if(state.choiceMade) {
+            if(state.choiceMade.action === 'deduct') cls += ' deduct';
+            else if(state.choiceMade.action === 'steal') cls += ' steal';
+            else if(state.choiceMade.action === 'secure') cls += ' secure';
+        }
+        content.innerHTML += `
+            <div class="${cls}" style="font-size:1.5rem;">${state.resultMsg}</div>
+            <button class="btn btn-gold gold-start-btn" onclick="startGoldRound()" style="margin-top:16px;font-size:1.2rem;">▶️ الجولة التالية</button>
+            <button class="btn btn-back" onclick="endGoldGame()" style="font-size:0.8rem;">⏹️ إنهاء اللعبة</button>
+        `;
+    }
+}
+
+async function startGoldRound() {
+    try {
+        let r = await fetch('/api/game/start', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ name: 'teacher' })
+        });
+        let res = await r.json();
+        if(res.ok) {
+            // Immediately poll
+            setTimeout(pollGoldDisplay, 200);
+        }
+    } catch {}
+}
+
+async function endGoldGame() {
+    try {
+        await fetch('/api/game/end', { method:'POST' });
+        document.getElementById('display-gold-section').style.display = 'none';
+    } catch {}
+}
+
+// Modify display poll to also fetch gold state
+let _origLoad = loadDisplay;
+loadDisplay = function() {
+    _origLoad();
+    pollGoldDisplay();
+};
 
 // ===================================================================
 //  ROUTING & INIT
