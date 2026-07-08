@@ -1804,9 +1804,14 @@ function enterGoldGame() {
     _goldStudentPoll = setInterval(pollGoldStudent, 1500);
 }
 
-function leaveGoldGame() {
+async function leaveGoldGame() {
     if(_goldStudentPoll) { clearInterval(_goldStudentPoll); _goldStudentPoll = null; }
+    await syncFromServer();
     switchScreen('screen-hub');
+    updateHubProgress();
+    let data = getStudent(currentUser);
+    currentScore = data.score || 0;
+    document.getElementById('bar-score').innerText = currentScore;
 }
 
 async function pollGoldStudent() {
@@ -2042,6 +2047,7 @@ async function endGoldGame() {
     try {
         await fetch('/api/game/end', { method:'POST' });
         document.getElementById('display-gold-section').style.display = 'none';
+        await syncFromServer();
     } catch {}
 }
 
