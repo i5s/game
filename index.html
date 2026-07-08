@@ -570,6 +570,8 @@ function loginAs(name) {
     currentUser = name;
     let data = getStudent(name);
     currentScore = data.score || 0;
+    // Save student to server immediately so display/admin see them
+    saveStudent(name, data);
     document.getElementById('bar-name').innerText = currentUser;
     document.getElementById('bar-score').innerText = currentScore;
     document.getElementById('user-bar').style.display = 'flex';
@@ -1766,14 +1768,12 @@ function loadDisplay() {
     let qrContainer = document.getElementById('qr-code-container');
     let urlEl = document.getElementById('display-url');
 
-    fetch('/api/ip').then(r => r.json()).then(info => {
-        let serverUrl = info.url;
-        urlEl.textContent = serverUrl;
-        let qrImg = qrContainer.querySelector('img');
-        if(!qrImg) {
-            qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(serverUrl)}" alt="QR" style="width:240px;height:240px;image-rendering:pixelated;border-radius:8px;">`;
-        }
-    }).catch(() => { urlEl.textContent = 'http://[جهّز السيرفر]'; });
+    let serverUrl = window.location.origin;
+    urlEl.textContent = serverUrl;
+    let qrImg = qrContainer.querySelector('img');
+    if(!qrImg) {
+        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(serverUrl)}" alt="QR" style="width:240px;height:240px;image-rendering:pixelated;border-radius:8px;">`;
+    }
 
     let board = document.getElementById('display-leaderboard');
     if(!entries.length) {
@@ -1964,32 +1964,39 @@ function renderGoldDisplay(state) {
     let content = document.getElementById('display-gold-content');
     if(!section || !content) return;
 
-    if(state.phase === 'idle') {
-        section.style.display = 'none';
-        return;
-    }
     section.style.display = 'block';
-
     let timeLeft = state.timerSec - Math.floor((Date.now() - state.startAt) / 1000);
     if(timeLeft < 0) timeLeft = 0;
-    let timerClass = timeLeft <= 5 ? 'gold-timer urgent' : 'gold-timer';
+
+    if(state.phase === 'idle') {
+        content.innerHTML = `
+            <div style="text-align:center;padding:20px;">
+                <h2 style="color:var(--color-accent);margin-bottom:12px;">🏆⚡ الذهب من كهوت</h2>
+                <p style="font-size:1.1rem;margin-bottom:20px;opacity:0.7;">أسئلة تنافسية سريعة — أول إجابة صحيحة تفوز!</p>
+                <button class="btn btn-gold gold-start-btn" onclick="startGoldRound()" style="font-size:1.3rem;padding:20px;">▶️ بدء جولة</button>
+                <p style="font-size:0.9rem;margin-top:12px;opacity:0.5;">الطلاب يدخلون من جوالاتهم ويضغطون الإجابة</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Clear interval from old phase
+    if(window._goldDisplayTimer) clearInterval(window._goldDisplayTimer);
 
     if(state.phase === 'question') {
-        let correctIdx = state.correctIndex;
         let opts = state.options.map((o, i) =>
             `<div class="gold-opt" id="dg-opt-${i}">${o}</div>`
         ).join('');
+        let timerClass = timeLeft <= 5 ? 'gold-timer urgent' : 'gold-timer';
         content.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                 <span class="gold-badge">🏆 الجولة ${state.round}</span>
-                <div class="${timerClass}">⏱ ${timeLeft}</div>
+                <div class="${timerClass}" id="dg-timer">⏱ ${timeLeft}</div>
             </div>
             <div class="gold-q">${state.question}</div>
             <div class="gold-opts">${opts}</div>
-            <div style="font-size:0.9rem;opacity:0.6;">👥 ${state.answerCount} أجابوا</div>
+            <div style="font-size:1rem;font-weight:700;color:var(--color-foreground);text-align:center;margin-top:12px;">👥 ${state.answerCount} طالب أجابوا</div>
         `;
-        // Countdown
-        if(window._goldDisplayTimer) clearInterval(window._goldDisplayTimer);
         window._goldDisplayTimer = setInterval(() => {
             let t = state.timerSec - Math.floor((Date.now() - state.startAt) / 1000);
             let el = document.getElementById('dg-timer');
@@ -1997,36 +2004,41 @@ function renderGoldDisplay(state) {
                 el.className = t <= 5 ? 'gold-timer urgent' : 'gold-timer'; }
             if(t <= 0) clearInterval(window._goldDisplayTimer);
         }, 500);
+        return;
     }
 
     if(state.phase === 'answered' || state.phase === 'choice') {
-        if(window._goldDisplayTimer) clearInterval(window._goldDisplayTimer);
-        // Show correct answer
         document.querySelectorAll('.gold-opt').forEach((el, i) => {
             if(i === state.correctIndex) el.classList.add('correct');
             else el.classList.add('wrong');
         });
-        content.innerHTML += `
+        content.innerHTML = `
+            <div class="gold-q" style="font-size:1.2rem;opacity:0.6;">${state.question}</div>
+            <div style="text-align:center;margin:10px 0;">
+                <span class="gold-badge" style="font-size:1rem;">✅ الإجابة الصحيحة: ${state.options[state.correctIndex]}</span>
+            </div>
             <div class="gold-winner">🏆 الفائز: ${state.winner} 🎉</div>
-            <div class="gold-waiting">⏳ ${state.winner} يختار الآن...</div>
+            <div class="gold-waiting">⏳ ${state.winner} يختار الآن (خصم/سرقة/تأمين) من جواله...</div>
         `;
+        return;
     }
 
     if(state.phase === 'result') {
-        if(window._goldDisplayTimer) clearInterval(window._goldDisplayTimer);
-        if(state.correctIndex >= 0) {
-            document.querySelectorAll('.gold-opt').forEach((el, i) => {
-                if(i === state.correctIndex) el.classList.add('correct');
-                else el.classList.add('wrong');
-            });
-        }
+        document.querySelectorAll('.gold-opt').forEach((el, i) => {
+            if(i === state.correctIndex) el.classList.add('correct');
+            else el.classList.add('wrong');
+        });
         let cls = 'gold-result';
         if(state.choiceMade) {
             if(state.choiceMade.action === 'deduct') cls += ' deduct';
             else if(state.choiceMade.action === 'steal') cls += ' steal';
             else if(state.choiceMade.action === 'secure') cls += ' secure';
         }
-        content.innerHTML += `
+        content.innerHTML = `
+            <div class="gold-q" style="font-size:1.2rem;opacity:0.6;">${state.question}</div>
+            <div style="text-align:center;margin:10px 0;">
+                <span class="gold-badge" style="font-size:1rem;">✅ الإجابة الصحيحة: ${state.options[state.correctIndex]}</span>
+            </div>
             <div class="${cls}" style="font-size:1.5rem;">${state.resultMsg}</div>
             <button class="btn btn-gold gold-start-btn" onclick="startGoldRound()" style="margin-top:16px;font-size:1.2rem;">▶️ الجولة التالية</button>
             <button class="btn btn-back" onclick="endGoldGame()" style="font-size:0.8rem;">⏹️ إنهاء اللعبة</button>
