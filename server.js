@@ -18,12 +18,13 @@ function writeData(d) { fs.writeFileSync(DATA_FILE, JSON.stringify(d, null, 2));
 // ---- Persistent data API ----
 app.get('/api/students', (req, res) => res.json(readData()));
 app.post('/api/student', (req, res) => {
-    let { name, score, days } = req.body;
+    let { name, score, days, group } = req.body;
     if (!name) return res.status(400).json({ error: 'name required' });
     let data = readData();
-    if (!data[name]) data[name] = { score: 0, days: {} };
+    if (!data[name]) data[name] = { score: 0, days: {}, group: '1' };
     if (score !== undefined) data[name].score = Math.max(0, score);
     if (days !== undefined) data[name].days = days;
+    if (group !== undefined) data[name].group = group;
     writeData(data);
     res.json({ ok: true });
 });
@@ -53,47 +54,78 @@ app.get('/api/ip', (req, res) => {
 });
 
 // ================================================================
-//  GOLD ROUND (الذهب من كهوت) — real‑time game engine
+//  منافسة الذهب — real‑time competition engine
+//  40 questions (10 per day), group‑filtered targeting
 // ================================================================
 
-const GOLD_QUESTIONS = [
+const GOLD_QUESTIONS_BY_DAY = {
+  1: [ // يوم 1: مسار المواد الإعلامية
     { q: "ما الجهاز الذي يستخدمه المصور لتصوير الفيديو؟", opts: ["كاميرا", "ميكروويف", "خلاط", "غسالة"], correct: 0 },
     { q: "ما اسم الشخص الذي يقرأ الأخبار على التلفاز؟", opts: ["مذيع", "طباخ", "سائق", "نجار"], correct: 0 },
     { q: "ماذا نستخدم لتسجيل الصوت؟", opts: ["ميكروفون", "مطرقة", "مقص", "مسطرة"], correct: 0 },
     { q: "أين نشاهد الأخبار اليومية؟", opts: ["تلفاز", "ثلاجة", "سرير", "خزانة"], correct: 0 },
     { q: "ما معنى كلمة Broadcast؟", opts: ["بث", "طبخ", "بناء", "زراعة"], correct: 0 },
-    { q: "أي من هذه أدوات التصوير؟", opts: ["حامل ثلاثي (ترايبود)", "ممحاة", "دباسة", "مفك"], correct: 0 },
+    { q: "أي من هذه أدوات التصوير؟", opts: ["حامل ثلاثي", "ممحاة", "دباسة", "مفك"], correct: 0 },
     { q: "ماذا يفعل المونتير؟", opts: ["يركب المشاهد", "يطبخ الطعام", "يقود سيارة", "يزرع شجرة"], correct: 0 },
-    { q: "ما معنى كلمة Ingest في الإعلام؟", opts: ["استيراد المادة", "حذف المادة", "طباعة المادة", "تلوين المادة"], correct: 0 },
-    { q: "من هو المسؤول عن إخراج النشرة؟", opts: ["مخرج", "مصور", "طباخ", "سباك"], correct: 0 },
-    { q: "أين تخزَّن المواد المصورة بعد التصوير؟", opts: ["قسم الإنجست", "المطبخ", "غرفة النوم", "الحديقة"], correct: 0 },
-    { q: "ما معنى كلمة Studio؟", opts: ["استوديو", "مدرسة", "مستشفى", "مكتبة"], correct: 0 },
-    { q: "ما شكل الضوء الذي يستخدمه المصور؟", opts: ["لمبة تصوير", "شمعة", "مصباح جيب", "ليزر"], correct: 0 },
-    { q: "ما اسم الأغنية التي تفتتح النشرة؟", opts: ["شارة البداية", "أغنية نوم", "نشيد وطني", "أغنية حزينة"], correct: 0 },
-    { q: "ما الجهاز الذي يعرض الصورة للمشاهدين؟", opts: ["شاشة عرض", "فرن", "غسالة", "مكنسة"], correct: 0 },
-    { q: "ماذا يحتاج المذيع قبل الظهور على الهواء؟", opts: ["ميكروفون", "قبعة", "نظارة شمس", "حقيبة"], correct: 0 },
-    { q: "ما معنى كلمة Montage؟", opts: ["مونتاج (تركيب)", "طبخ", "سباحة", "رسم"], correct: 0 },
-    { q: "كيف نرسل الخبر للمشاهدين؟", opts: ["عبر البث المباشر", "بالسيارة", "بالبريد", "بالقطار"], correct: 0 },
-    { q: "ما أول خطوة في إنتاج الخبر؟", opts: ["التصوير الميداني", "المونتاج", "البث", "النوم"], correct: 0 },
-    { q: "من الذي يقف خلف الكاميرا؟", opts: ["مصور", "مذيع", "ضيف", "مشاهد"], correct: 0 },
-    { q: "ما اسم البرنامج الذي نستخدمه لتحرير الفيديو؟", opts: ["برنامج مونتاج", "آلة حاسبة", "متصفح", "لعبة"], correct: 0 },
-];
+    { q: "ما معنى كلمة Ingest؟", opts: ["استيراد المادة", "حذف المادة", "طباعة المادة", "تلوين المادة"], correct: 0 },
+    { q: "من المسؤول عن إخراج النشرة؟", opts: ["مخرج", "مصور", "طباخ", "سباك"], correct: 0 },
+    { q: "ما اسم برنامج تحرير الفيديو؟", opts: ["برنامج مونتاج", "آلة حاسبة", "متصفح", "لعبة"], correct: 0 },
+  ],
+  2: [ // يوم 2: مهندس استوديو البث
+    { q: "ما الجهاز الذي يخلط الصوت والفيديو؟", opts: ["ميكسر", "مكنسة", "مكواة", "محمصة"], correct: 0 },
+    { q: "ماذا نسمي الشاشة التي يقرأ منها المذيع؟", opts: ["Teleprompter", "تلفاز", "كمبيوتر", "آيباد"], correct: 0 },
+    { q: "ما معنى كلمة Live؟", opts: ["بث مباشر", "تسجيل", "تصوير", "مونتاج"], correct: 0 },
+    { q: "ماذا يفعل مهندس الاستوديو؟", opts: ["يتحكم بالأجهزة", "يطبخ", "يقود", "يسبح"], correct: 0 },
+    { q: "ما الجهاز الذي يسجل الصوت؟", opts: ["ميكروفون", "كاميرا", "طابعة", "فأرة"], correct: 0 },
+    { q: "أين يجلس المذيع في الاستوديو؟", opts: ["خلف المنصة", "في المطبخ", "في السيارة", "على السرير"], correct: 0 },
+    { q: "ما معنى كلمة Cue؟", opts: ["إشارة البدء", "إشارة نهاية", "توقف", "انتظار"], correct: 0 },
+    { q: "ماذا نستخدم للإضاءة في الاستوديو؟", opts: ["لمبات تصوير", "شمعة", "مصباح جيب", "ليزر"], correct: 0 },
+    { q: "كم عدد الكاميرات في الاستوديو الصغير؟", opts: ["2-3 كاميرات", "10 كاميرات", "كاميرا واحدة", "50 كاميرا"], correct: 0 },
+    { q: "ما معنى كلمة Replay؟", opts: ["إعادة المشهد", "تصوير جديد", "حذف", "تسليم"], correct: 0 },
+  ],
+  3: [ // يوم 3: كابتن طيران الدرون
+    { q: "ما اسم الطائرة بدون طيار؟", opts: ["درون", "سيارة", "قطار", "دراجة"], correct: 0 },
+    { q: "ماذا يعني GPS؟", opts: ["تحديد المواقع", "سرعة الريح", "ارتفاع", "وزن"], correct: 0 },
+    { q: "أين يمنع طيران الدرون؟", opts: ["قرب المطارات", "فوق البحر", "فوق الجبال", "فوق الحقل"], correct: 0 },
+    { q: "ما أول خطوة قبل الإقلاع؟", opts: ["فحص البطارية", "التصوير", "الهبوط", "النوم"], correct: 0 },
+    { q: "ماذا يعني FPV؟", opts: ["كاميرا الرؤية المباشرة", "جهاز تحكم", "بطارية", "ريشة"], correct: 0 },
+    { q: "ما نوع بطارية الدرون؟", opts: ["LiPo", "AA", "AAA", "بطارية سيارة"], correct: 0 },
+    { q: "كم عدد ريشات الدرون الرباعي؟", opts: ["4", "2", "6", "8"], correct: 0 },
+    { q: "ماذا يفعل كابتن الدرون؟", opts: ["يقود الدرون", "يطبخ", "يسبح", "يرسم"], correct: 0 },
+    { q: "ما الجهاز الذي يتحكم بالدرون؟", opts: ["جهاز تحكم", "ميكروويف", "تلفاز", "ثلاجة"], correct: 0 },
+    { q: "ماذا نصور بالدرون؟", opts: ["مناظر جوية", "طعام", "ملابس", "سيارات"], correct: 0 },
+  ],
+  4: [ // يوم 4: كاشف ومولد الـ AI
+    { q: "ماذا يعني AI؟", opts: ["ذكاء اصطناعي", "طائرة", "سيارة", "قطار"], correct: 0 },
+    { q: "ما اسم الأداة التي تولد الصور بالنص؟", opts: ["مولد صور AI", "غسالة", "مكنسة", "خلاط"], correct: 0 },
+    { q: "هل يستطيع AI كتابة الأخبار؟", opts: ["نعم", "لا", "أحياناً", "مستحيل"], correct: 0 },
+    { q: "ما معنى كلمة Prompt؟", opts: ["الأمر النصي", "طائرة", "كاميرا", "بطارية"], correct: 0 },
+    { q: "كيف نصنع صورة بالـ AI؟", opts: ["نكتب وصفاً", "نصور بالجوال", "نرسم", "نشتري"], correct: 0 },
+    { q: "ما فائدة الـ AI في الإعلام؟", opts: ["يساعد بالإنتاج", "يأكل", "ينام", "يمشي"], correct: 0 },
+    { q: "هل كل صور AI حقيقية؟", opts: ["لا, بعضها مولّد", "نعم, كلها حقيقية", "نصفها", "مافي"], correct: 0 },
+    { q: "ما معنى Training في AI؟", opts: ["تدريب النموذج", "طبخ", "نوم", "ركض"], correct: 0 },
+    { q: "هل يستطيع AI كشف الأخبار المزيفة؟", opts: ["نعم", "لا", "مستحيل", "أحياناً"], correct: 0 },
+    { q: "ما اسم تطبيق لتوليد الفيديو بالـ AI؟", opts: ["Sora", "Excel", "Word", "PowerPoint"], correct: 0 },
+  ],
+};
 
 // In-memory game state
 let game = {
     phase: 'idle',      // idle | question | answered | choice | result
     round: 0,
+    day: 1,
     question: null,
     options: [],
     correctIndex: -1,
-    answers: {},        // { name: { answerIdx, time } }
+    answers: {},        // { name: { answerIdx, time, group } }
     winner: null,
     winnerTime: null,
-    choiceMade: null,   // { action, target, points }
+    winnerGroup: null,
+    choiceMade: null,
     resultMsg: '',
     startAt: 0,
     timerSec: 15,
-    securePlayers: [],  // names with "secure first place" active
+    securePlayers: [],
 };
 
 function resetGame() {
@@ -105,33 +137,38 @@ function resetGame() {
     game.answers = {};
     game.winner = null;
     game.winnerTime = null;
+    game.winnerGroup = null;
     game.choiceMade = null;
     game.resultMsg = '';
     game.startAt = 0;
     game.securePlayers = [];
 }
 
-function pickQuestion() {
-    let q = GOLD_QUESTIONS[Math.floor(Math.random() * GOLD_QUESTIONS.length)];
+function pickQuestion(day) {
+    let pool = GOLD_QUESTIONS_BY_DAY[day] || GOLD_QUESTIONS_BY_DAY[1];
+    let q = pool[Math.floor(Math.random() * pool.length)];
+    game.day = day;
     game.question = q.q;
     game.options = [...q.opts];
     game.correctIndex = q.correct;
     game.answers = {};
     game.winner = null;
     game.winnerTime = null;
+    game.winnerGroup = null;
     game.choiceMade = null;
     game.resultMsg = '';
     game.startAt = Date.now();
 }
 
-// Sanitise state for clients (hide correct answer during question phase)
 function sanitisedGame() {
     let s = {
         phase: game.phase,
         round: game.round,
+        day: game.day,
         question: game.question,
         options: game.options,
         winner: game.winner,
+        winnerGroup: game.winnerGroup,
         choiceMade: game.choiceMade,
         resultMsg: game.resultMsg,
         timerSec: game.timerSec,
@@ -140,55 +177,51 @@ function sanitisedGame() {
         answerCount: Object.keys(game.answers).length,
     };
     if (game.phase === 'question') {
-        s.correctIndex = -1; // hidden
+        s.correctIndex = -1;
     } else {
         s.correctIndex = game.correctIndex;
     }
     return s;
 }
 
-// ---- GAME API ----
+// ---- منافسة الذهب API ----
 
-// GET /api/game — current state (student & display poll this)
 app.get('/api/game', (req, res) => res.json(sanitisedGame()));
 
-// POST /api/game/start — teacher starts a round (from display)
 app.post('/api/game/start', (req, res) => {
     if (!req.body.name) return res.status(400).json({ error: 'teacher name required' });
+    let day = req.body.day || 1;
     game.round++;
-    pickQuestion();
+    pickQuestion(day);
     game.phase = 'question';
-    res.json({ ok: true, round: game.round });
+    res.json({ ok: true, round: game.round, day });
 });
 
-// POST /api/game/answer — student submits
 app.post('/api/game/answer', (req, res) => {
     let { name, answer } = req.body;
     if (!name || answer === undefined) return res.status(400).json({ error: 'name & answer required' });
     if (game.phase !== 'question') return res.json({ ok: false, reason: 'no_question' });
     if (game.answers[name]) return res.json({ ok: false, reason: 'already_answered' });
 
-    game.answers[name] = { answerIdx: answer, time: Date.now() };
-
-    // Ensure student exists in data
     let data = readData();
-    if (!data[name]) data[name] = { score: 0, days: {} };
+    let student = data[name] || { score: 0, days: {}, group: '1' };
+
+    game.answers[name] = { answerIdx: answer, time: Date.now(), group: student.group };
+
+    if (!data[name]) { data[name] = { score: 0, days: {}, group: '1' }; }
     writeData(data);
 
-    // Check if it's the first correct answer
     if (answer === game.correctIndex && !game.winner) {
         game.winner = name;
         game.winnerTime = Date.now();
+        game.winnerGroup = student.group;
         game.phase = 'answered';
-        // Award points for being first correct
         data[name].score = (data[name].score || 0) + 50;
         writeData(data);
     }
-
     res.json({ ok: true, phase: game.phase, winner: game.winner });
 });
 
-// POST /api/game/choice — winner chooses action
 app.post('/api/game/choice', (req, res) => {
     let { name, action, target } = req.body;
     if (game.winner !== name) return res.status(400).json({ error: 'not_winner' });
@@ -210,6 +243,13 @@ app.post('/api/game/choice', (req, res) => {
 
     if (!target || !data[target]) return res.status(400).json({ error: 'invalid_target' });
 
+    // Group check: only same group
+    let winnerGroup = game.winnerGroup || (data[name] && data[name].group);
+    let targetGroup = data[target] && data[target].group;
+    if (winnerGroup && targetGroup && winnerGroup !== targetGroup) {
+        return res.status(403).json({ error: 'wrong_group', msg: `${target} من مجموعة ${targetGroup}، وأنت من مجموعة ${winnerGroup}!` });
+    }
+
     if (action === 'deduct') {
         data[target].score = Math.max(0, (data[target].score || 0) - points);
         msg = `🗡️ ${name} خصم ${points} نقطة من ${target}!`;
@@ -227,13 +267,11 @@ app.post('/api/game/choice', (req, res) => {
     res.json({ ok: true });
 });
 
-// POST /api/game/next — teacher starts next round
 app.post('/api/game/next', (req, res) => {
     resetGame();
     res.json({ ok: true });
 });
 
-// POST /api/game/end — teacher ends gold round session
 app.post('/api/game/end', (req, res) => {
     resetGame();
     res.json({ ok: true });
@@ -253,7 +291,7 @@ app.listen(PORT, '0.0.0.0', () => {
 ║                                              ║
 ║  📺  Display:  http://localhost:${PORT}/     ║
 ║  ⚙️   Admin:    http://localhost:${PORT}/    ║
-║  🏆  Gold:     /?display + start button      ║
+║  🏆  منافسة الذهب (40 سؤالاً، 3 مجموعات)    ║
 ╚══════════════════════════════════════════════╝
     `);
 });
