@@ -1930,7 +1930,12 @@ function loadAdmin() {
         });
     }
     html += `</tbody></table>`;
-    html += `<div style="margin-top:12px;"><button class="btn btn-orange btn-sm" onclick="if(confirm('حذف جميع البيانات؟')){deleteAllAPI().then(loadAdmin);}">🗑️ حذف الكل</button></div>`;
+    html += `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-orange btn-sm" onclick="if(confirm('حذف جميع البيانات؟')){deleteAllAPI().then(loadAdmin);}">🗑️ حذف الكل</button>
+        <button class="btn btn-green btn-sm" onclick="exportBackup()">💾 تصدير باك أب</button>
+        <button class="btn btn-sm" style="background:#6366f1;color:white;border-color:#6366f1;" onclick="document.getElementById('import-file-input').click()">📂 استيراد باك أب</button>
+        <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importBackup(event)">
+    </div>`;
 
     // Gold game controls
     html += `<div style="margin-top:20px;padding:16px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:var(--radius-md);color:#e2e8f0;">
@@ -1978,6 +1983,43 @@ async function adminNextGold() {
 async function adminEndGold() {
     try { await fetch('/api/game/end', { method:'POST', headers:{'Content-Type':'application/json'} }); loadAdmin(); }
     catch(e) {}
+}
+
+function exportBackup() {
+    let db = getDB();
+    let blob = new Blob([JSON.stringify({ backup: db, date: new Date().toISOString(), total: Object.keys(db).length }, null, 2)], { type:'application/json' });
+    let a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `bakup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+async function importBackup(event) {
+    let file = event.target.files[0];
+    if(!file) return;
+    try {
+        let text = await file.text();
+        let data = JSON.parse(text);
+        let backup = data.backup || data;
+        let count = 0;
+        for(let name in backup) {
+            if(backup[name] && typeof backup[name].score === 'number') {
+                // Restore each student
+                _localDB[name] = backup[name];
+                if (_useServer) {
+                    await fetch('/api/student', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name, ...backup[name]}) });
+                }
+                count++;
+            }
+        }
+        saveToLocal();
+        alert(`✅ تم استيراد ${count} متسابق بنجاح!`);
+        loadAdmin();
+    } catch(e) {
+        alert('❌ فشل استيراد الملف. تأكد أن الملف بصيغة JSON صحيحة.');
+    }
+    event.target.value = '';
 }
 
 function deleteStudent(name) {
