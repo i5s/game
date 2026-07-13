@@ -147,11 +147,22 @@ function resetGame() {
     game.securePlayers = [];
 }
 
-// Called by "end" — full session reset, qIndex back to 0
+// Called by "end" — full session reset, show thank you
 function endSession() {
-    resetGame();
-    game.qIndex = 0;
+    game.phase = 'ended';
     game.sessionActive = false;
+    game.round = 0;
+    game.question = null;
+    game.options = [];
+    game.correctIndex = -1;
+    game.answers = {};
+    game.winner = null;
+    game.winnerTime = null;
+    game.winnerGroup = null;
+    game.choiceMade = null;
+    game.resultMsg = '';
+    game.startAt = 0;
+    game.securePlayers = [];
 }
 
 function pickQuestion(day) {
@@ -203,6 +214,7 @@ app.get('/api/game', (req, res) => res.json(sanitisedGame()));
 app.post('/api/game/start', (req, res) => {
     if (!req.body.name) return res.status(400).json({ error: 'teacher name required' });
     let day = req.body.day || 1;
+    if (game.phase === 'ended') game.qIndex = 0; // fresh session
     game.round++;
     game.qIndex++;
     game.sessionActive = true;
@@ -279,6 +291,17 @@ app.post('/api/game/choice', (req, res) => {
     game.resultMsg = msg;
     writeData(data);
     res.json({ ok: true });
+});
+
+// POST /api/score — manual score edit (admin)
+app.post('/api/score', (req, res) => {
+    let { name, score } = req.body;
+    if (!name || score === undefined) return res.status(400).json({ error: 'name & score required' });
+    let data = readData();
+    if (!data[name]) return res.status(404).json({ error: 'student not found' });
+    data[name].score = Math.max(0, parseInt(score) || 0);
+    writeData(data);
+    res.json({ ok: true, name, score: data[name].score });
 });
 
 app.post('/api/game/next', (req, res) => {
