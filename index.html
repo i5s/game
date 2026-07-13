@@ -251,7 +251,7 @@
         <button class="btn" id="day-btn-4" onclick="startDay(4)">🤖 اليوم 4: كاشف ومولد الـ AI</button>
         <button class="btn btn-back" onclick="switchScreen('screen-main')">⬅️ الرجوع للرئيسية</button>
         <div style="border-top:2px solid var(--color-border);margin-top:12px;padding-top:12px;">
-            <button class="btn btn-gold" onclick="enterGold()" style="width:100%;">🏆 منافسة الذهب (40 سؤالاً - 3 مجموعات)</button>
+            <button class="btn btn-gold" onclick="enterGold()" style="width:100%;">🏆 منافسة الذهب</button>
         </div>
     </div>
 
@@ -269,7 +269,7 @@
     <!-- ===== SCREEN: GOLD ROUND (منافسة الذهب) ===== -->
     <div id="screen-gold" class="screen">
         <button class="btn btn-back" onclick="exitGold()" style="font-size:0.75rem;padding:8px;background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#e2e8f0;">⬅️ خروج</button>
-        <div class="gold-header">🏆 منافسة الذهب <span style="font-size:0.8rem;color:rgba(255,255,255,0.4);-webkit-text-fill-color:rgba(255,255,255,0.4);">40 سؤالاً</span></div>
+        <div class="gold-header">🏆 منافسة الذهب</div>
         <div id="gold-content" style="text-align:center;padding:20px;">
             <div style="font-size:3rem;margin-bottom:12px;">⏳</div>
             <p style="color:rgba(255,255,255,0.6);">في انتظار بدء الجولة...</p>
@@ -296,20 +296,20 @@
     <!-- ===== SCREEN: DISPLAY / PROJECTOR ===== -->
     <div id="screen-display" class="screen">
         <div id="display-inner" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;text-align:center;">
-            <h1 style="font-size:2.5rem;color:var(--color-primary);margin-bottom:10px;">📡 إعلامي المستقبل</h1>
-            <p style="font-size:1.2rem;color:var(--color-foreground);margin-bottom:20px;">امسح الرمز وابدأ المنافسة!</p>
-            <div id="display-qr" style="background:var(--color-card);padding:20px;border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);display:inline-block;margin-bottom:24px;">
-                <div id="qr-code-container" style="width:260px;height:260px;display:flex;align-items:center;justify-content:center;background:white;border-radius:var(--radius-md);padding:10px;">
-                    <div style="color:var(--color-foreground);font-size:0.9rem;">جارٍ تحميل الرمز...</div>
+            <div id="display-logo" style="text-align:center;margin-bottom:12px;"></div>
+            <p style="font-size:1.2rem;color:var(--color-foreground);margin-bottom:16px;">امسح الرمز وابدأ المنافسة!</p>
+            <div id="display-qr" style="background:var(--color-card);padding:12px;border-radius:var(--radius-md);box-shadow:var(--shadow-lg);display:inline-block;margin-bottom:20px;">
+                <div id="qr-code-container" style="width:120px;height:120px;display:flex;align-items:center;justify-content:center;background:white;border-radius:var(--radius-sm);padding:4px;">
+                    <div style="color:var(--color-foreground);font-size:0.7rem;">جارٍ تحميل الرمز...</div>
                 </div>
-                <p id="display-url" style="margin-top:12px;font-size:0.9rem;color:var(--color-foreground);direction:ltr;unicode-bidi:embed;"></p>
+                <p id="display-url" style="margin-top:6px;font-size:0.75rem;color:var(--color-foreground);direction:ltr;unicode-bidi:embed;"></p>
             </div>
             <h2 style="font-size:1.8rem;color:var(--color-accent);margin-bottom:16px;">🏆 لوحة المتصدرين</h2>
             <div id="display-leaderboard" style="width:100%;max-width:700px;min-height:200px;"></div>
 
             <!-- Gold round section -->
             <div id="display-gold">
-                <div class="dg-label">🏆 منافسة الذهب <span style="font-weight:400;font-size:0.85rem;color:rgba(255,255,255,0.4);">40 سؤالاً | 3 مجموعات</span></div>
+                <div class="dg-label">🏆 منافسة الذهب</div>
                 <div id="display-gold-inner" style="text-align:center;">
                     <div style="margin-bottom:8px;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;">
                         <label style="font-size:0.85rem;color:rgba(255,255,255,0.6);">اليوم:</label>
@@ -2066,11 +2066,18 @@ function loadDisplay() {
     let qrContainer = document.getElementById('qr-code-container');
     let urlEl = document.getElementById('display-url');
 
+    // Copy logo from brand-header
+    let logoContainer = document.getElementById('display-logo');
+    if(logoContainer && !logoContainer.querySelector('img')) {
+        let orig = document.querySelector('.brand-header');
+        if(orig) logoContainer.innerHTML = orig.innerHTML;
+    }
+
     let serverUrl = window.location.origin;
     urlEl.textContent = serverUrl;
     let qrImg = qrContainer.querySelector('img');
     if(!qrImg) {
-        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(serverUrl)}" alt="QR" style="width:240px;height:240px;image-rendering:pixelated;border-radius:8px;">`;
+        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(serverUrl)}" alt="QR" style="width:120px;height:120px;image-rendering:pixelated;border-radius:8px;">`;
     }
 
     let board = document.getElementById('display-leaderboard');
