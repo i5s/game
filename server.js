@@ -114,6 +114,8 @@ let game = {
     phase: 'idle',      // idle | question | answered | choice | result
     round: 0,
     day: 1,
+    qIndex: 0,          // question number within current session (resets on end)
+    sessionActive: false,
     question: null,
     options: [],
     correctIndex: -1,
@@ -128,6 +130,7 @@ let game = {
     securePlayers: [],
 };
 
+// Called by "next" — keeps session alive, qIndex unchanged
 function resetGame() {
     game.phase = 'idle';
     game.round = 0;
@@ -142,6 +145,13 @@ function resetGame() {
     game.resultMsg = '';
     game.startAt = 0;
     game.securePlayers = [];
+}
+
+// Called by "end" — full session reset, qIndex back to 0
+function endSession() {
+    resetGame();
+    game.qIndex = 0;
+    game.sessionActive = false;
 }
 
 function pickQuestion(day) {
@@ -165,6 +175,8 @@ function sanitisedGame() {
         phase: game.phase,
         round: game.round,
         day: game.day,
+        qIndex: game.qIndex,
+        sessionActive: game.sessionActive,
         question: game.question,
         options: game.options,
         winner: game.winner,
@@ -192,9 +204,11 @@ app.post('/api/game/start', (req, res) => {
     if (!req.body.name) return res.status(400).json({ error: 'teacher name required' });
     let day = req.body.day || 1;
     game.round++;
+    game.qIndex++;
+    game.sessionActive = true;
     pickQuestion(day);
     game.phase = 'question';
-    res.json({ ok: true, round: game.round, day });
+    res.json({ ok: true, round: game.round, qIndex: game.qIndex, day });
 });
 
 app.post('/api/game/answer', (req, res) => {
@@ -273,7 +287,7 @@ app.post('/api/game/next', (req, res) => {
 });
 
 app.post('/api/game/end', (req, res) => {
-    resetGame();
+    endSession();
     res.json({ ok: true });
 });
 
