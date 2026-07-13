@@ -548,9 +548,21 @@ function saveToLocal() { localStorage.setItem('sba_kids_db', JSON.stringify(_loc
 function loadFromLocal() { try { _localDB = JSON.parse(localStorage.getItem('sba_kids_db')) || {}; } catch { _localDB = {}; } }
 
 async function syncFromServer() {
-    if (!_useServer) { loadFromLocal(); return; }
-    try { let r = await fetch('/api/students', { cache:'no-store' }); _localDB = await r.json(); }
-    catch { _useServer = false; loadFromLocal(); }
+    loadFromLocal();  // load local backup first
+    if (!_useServer) return;
+    try {
+        let r = await fetch('/api/students', { cache:'no-store' });
+        let serverData = await r.json();
+        if (Object.keys(serverData).length > 0) {
+            _localDB = serverData;
+            saveToLocal();
+        } else if (Object.keys(_localDB).length > 0) {
+            // Server recycled but we have local data — push it back
+            for (let name in _localDB) {
+                fetch('/api/student', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name, ..._localDB[name]}) }).catch(()=>{});
+            }
+        }
+    } catch { _useServer = false; }
 }
 function getDB() { return _localDB; }
 function getStudent(name) { let d = getDB(); return d[name] || { score:0, days:{} }; }
