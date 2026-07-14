@@ -234,6 +234,7 @@ function sanitisedGame() {
         s.correctIndex = -1;
     } else {
         s.correctIndex = game.correctIndex;
+        s.answers = game.answers;
     }
     return s;
 }
@@ -274,27 +275,34 @@ app.post('/api/game/answer', (req, res) => {
 
     let data = readData();
     let student = data[name] || { score: 0, days: {}, group: '1' };
+    if (!data[name]) { data[name] = { score: 0, days: {}, group: '1' }; }
 
     game.answers[name] = { answerIdx: answer, time: Date.now(), group: student.group };
 
-    if (!data[name]) { data[name] = { score: 0, days: {}, group: '1' }; }
-    writeData(data);
-
-    if (answer === game.correctIndex && !game.winner) {
-        game.winner = name;
-        game.winnerTime = Date.now();
-        game.winnerGroup = student.group;
-        game.phase = 'answered';
-        data[name].score = (data[name].score || 0) + 50;
+    let isCorrect = (answer === game.correctIndex);
+    if (isCorrect) {
+        // Speed-based scoring: faster reaction = more points (100 max, 10 min).
+        // Question stays open so EVERY correct answer scores; fastest becomes winner.
+        let elapsed = (Date.now() - game.startAt) / 1000;
+        let pts = Math.max(10, Math.min(100, Math.round(100 - (elapsed / 30) * 90)));
+        data[name].score = (data[name].score || 0) + pts;
+        game.answers[name].points = pts;
+        if (!game.winner) {
+            game.winner = name;
+            game.winnerTime = Date.now();
+            game.winnerGroup = student.group;
+        }
         writeData(data);
+        return res.json({ ok: true, correct: true, points: pts, winner: game.winner, phase: game.phase });
     }
-    res.json({ ok: true, phase: game.phase, winner: game.winner });
+    writeData(data);
+    res.json({ ok: true, correct: false, winner: game.winner, phase: game.phase });
 });
 
 app.post('/api/game/choice', (req, res) => {
     let { name, action } = req.body;
     if (game.winner !== name) return res.status(400).json({ error: 'not_winner' });
-    if (game.phase !== 'answered') return res.json({ ok: false, reason: 'wrong_phase' });
+    if (game.phase !== 'answered' && game.phase !== 'question') return res.json({ ok: false, reason: 'wrong_phase' });
 
     let data = readData();
     let points = 30;
