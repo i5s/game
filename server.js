@@ -371,6 +371,7 @@ app.post('/api/game/end', (req, res) => {
 });
 
 // ---- Static files & SPA catch-all ----
+app.use((req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
 app.use(express.static(__dirname));
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
