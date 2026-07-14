@@ -199,10 +199,16 @@ function pickQuestion(day) {
     used.push(idx);
     game.usedQuestions[day] = used;
     let q = pool[idx];
+    // Shuffle options so the correct answer isn't always first
+    let items = q.opts.map((t, i) => ({ t, c: i === q.correct }));
+    for (let i = items.length - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        [items[i], items[j]] = [items[j], items[i]];
+    }
     game.day = day;
     game.question = q.q;
-    game.options = [...q.opts];
-    game.correctIndex = q.correct;
+    game.options = items.map(x => x.t);
+    game.correctIndex = items.findIndex(x => x.c);
     game.answers = {};
     game.winner = null;
     game.winnerTime = null;
