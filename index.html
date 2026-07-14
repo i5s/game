@@ -310,18 +310,7 @@
             <!-- Gold round section -->
             <div id="display-gold">
                 <div class="dg-label">🏆 منافسة الذهب</div>
-                <div id="display-gold-inner" style="text-align:center;">
-                    <div style="margin-bottom:8px;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;">
-                        <label style="font-size:0.85rem;color:rgba(255,255,255,0.6);">اليوم:</label>
-                        <select id="gold-day-select" style="padding:6px 10px;border-radius:8px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:white;font-size:0.85rem;">
-                            <option value="1">🎞️ اليوم 1 - المواد الإعلامية</option>
-                            <option value="2">🎥 اليوم 2 - استوديو البث</option>
-                            <option value="3">🕹️ اليوم 3 - كابتن الدرون</option>
-                            <option value="4">🤖 اليوم 4 - الذكاء الاصطناعي</option>
-                        </select>
-                    </div>
-                    <button class="btn btn-gold" onclick="startGoldRound()" style="font-size:1.2rem;padding:16px 32px;margin:12px 0;">🚀 ابدأ جولة جديدة</button>
-                </div>
+                <div id="display-gold-inner" style="text-align:center;"></div>
             </div>
         </div>
     </div>
@@ -1794,13 +1783,9 @@ function renderGoldStudent() {
                         <p style="color:rgba(255,255,255,0.6);margin-bottom:16px;">اختر:</p>
                     </div>
                     <div style="padding:0 12px;">
-                        <div style="margin-bottom:12px;">
-                            <label style="color:rgba(255,255,255,0.6);font-size:0.85rem;">اختر اللاعب المستهدف:</label>
-                            <select id="gold-target" class="gold-select">${getOtherPlayers()}</select>
-                        </div>
-                        <button class="gold-choice-btn" style="background:#ef4444;" onclick="submitGoldChoice('deduct')">🗡️ خصم 30 نقطة</button>
-                        <button class="gold-choice-btn" style="background:#f59e0b;" onclick="submitGoldChoice('steal')">💰 سرقة 30 نقطة</button>
-                        <button class="gold-choice-btn" style="background:#22c55e;" onclick="submitGoldChoice('secure')">🔒 تأمين المركز الأول</button>
+                        <button class="gold-choice-btn" style="background:#ef4444;" onclick="submitGoldChoice('deduct')">🗡️ خصم 30 من البنك</button>
+                        <button class="gold-choice-btn" style="background:#22c55e;" onclick="submitGoldChoice('give')">🎁 يعطي الأضعف</button>
+                        <button class="gold-choice-btn" style="background:#f59e0b;" onclick="submitGoldChoice('secure')">🔒 تأمين المركز</button>
                     </div>`;
         } else {
             html = `<div class="gold-waiting">
@@ -1820,7 +1805,7 @@ function renderGoldStudent() {
         let msg = g.resultMsg || 'انتهت الجولة!';
         html = `<div class="gold-result">
                     <div style="font-size:2rem;margin-bottom:8px;">${
-                        msg.includes('🗡️') ? '🗡️' : msg.includes('💰') ? '💰' : msg.includes('🔒') ? '🔒' : '🏆'
+                        msg.includes('🗡️') ? '🗡️' : msg.includes('🎁') ? '🎁' : msg.includes('🔒') ? '🔒' : '🏆'
                     }</div>
                     <div style="color:rgba(255,255,255,0.9);margin-bottom:16px;">${msg}</div>
                     <p style="color:rgba(255,255,255,0.4);font-size:0.85rem;">في انتظار الجولة القادمة...</p>
@@ -1856,13 +1841,11 @@ async function submitGoldAnswer(idx) {
 }
 
 async function submitGoldChoice(action) {
-    let target = document.getElementById('gold-target')?.value;
-    if(action !== 'secure' && !target) { alert('اختر لاعباً أولاً!'); return; }
     try {
         let r = await fetch('/api/game/choice', {
             method:'POST',
             headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ name: currentUser, action, target })
+            body: JSON.stringify({ name: currentUser, action })
         });
         let data = await r.json();
         if(!data.ok) alert(data.error || 'حدث خطأ');
@@ -1871,9 +1854,13 @@ async function submitGoldChoice(action) {
 
 // ---- Gold round: DISPLAY (projector) side ----
 async function startGoldRound() {
-    let teacher = prompt('اسمك (المعلم):', 'المعلم');
-    if(!teacher) return;
     let day = parseInt(document.getElementById('gold-day-select')?.value || '1');
+    let teacher = window.goldTeacher;
+    if(!teacher) {
+        teacher = prompt('اسمك (المعلم):', 'المعلم');
+        if(!teacher) return;
+        window.goldTeacher = teacher;
+    }
     try {
         await fetch('/api/game/start', {
             method:'POST',
@@ -1883,13 +1870,20 @@ async function startGoldRound() {
     } catch(e) { alert('فشل بدء الجولة'); }
 }
 
+// "التالي" auto-advances to the next question (calls advance = next + start)
 async function nextGoldRound() {
+    let day = parseInt(document.getElementById('gold-day-select')?.value || window._displayGold?.day || '1');
     try {
-        await fetch('/api/game/next', { method:'POST', headers:{'Content-Type':'application/json'} });
+        await fetch('/api/game/advance', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ day })
+        });
     } catch(e) {}
 }
 
 async function endGold() {
+    window.goldTeacher = null;
     try {
         await fetch('/api/game/end', { method:'POST', headers:{'Content-Type':'application/json'} });
     } catch(e) {}
@@ -1946,24 +1940,11 @@ function loadAdmin() {
         <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importBackup(event)">
     </div>`;
 
-    // Gold game controls
+    // Gold game status (read-only — controls live on the display screen)
     html += `<div style="margin-top:20px;padding:16px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:var(--radius-md);color:#e2e8f0;">
         <h3 style="color:#f59e0b;margin-bottom:12px;">🏆 منافسة الذهب</h3>
         <div id="admin-gold-status" style="font-size:0.85rem;margin-bottom:12px;color:rgba(255,255,255,0.6);">⏳ تحميل...</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
-            <label style="font-size:0.8rem;">اليوم:</label>
-            <select id="admin-gold-day" style="padding:6px 10px;border-radius:8px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:white;font-size:0.85rem;">
-                <option value="1">اليوم 1</option>
-                <option value="2">اليوم 2</option>
-                <option value="3">اليوم 3</option>
-                <option value="4">اليوم 4</option>
-            </select>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-gold" onclick="adminStartGold()" style="font-size:0.85rem;padding:10px 18px;">🚀 ابدأ جولة</button>
-            <button class="btn" onclick="adminNextGold()" style="font-size:0.85rem;padding:10px 18px;background:#f59e0b;color:white;border-color:#f59e0b;">▶️ التالية</button>
-            <button class="btn btn-back" onclick="adminEndGold()" style="font-size:0.8rem;padding:8px 14px;">🔚 إنهاء</button>
-        </div>
+        <p style="font-size:0.8rem;color:rgba(255,255,255,0.4);">التحكم في المنافسة من شاشة العرض (الديسبلي) فقط.</p>
     </div>`;
     document.getElementById('admin-content').innerHTML = html;
 
@@ -1982,15 +1963,6 @@ function loadAdmin() {
     }).catch(() => {});
 }
 
-async function adminStartGold() {
-    let day = document.getElementById('admin-gold-day')?.value || '1';
-    try { await fetch('/api/game/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:'admin', day:parseInt(day) }) }); loadAdmin(); }
-    catch(e) { alert('فشل'); }
-}
-async function adminNextGold() {
-    try { await fetch('/api/game/next', { method:'POST', headers:{'Content-Type':'application/json'} }); loadAdmin(); }
-    catch(e) {}
-}
 async function adminEndGold() {
     try { await fetch('/api/game/end', { method:'POST', headers:{'Content-Type':'application/json'} }); loadAdmin(); }
     catch(e) {}
@@ -2099,6 +2071,11 @@ function loadDisplay() {
         </div>`;
     }).join('');
     }
+
+    // 1s timer updater for the gold round countdown (display-only)
+    if(!window._timerInterval) {
+        window._timerInterval = setInterval(updateDisplayTimer, 1000);
+    }
 }
 
 async function pollDisplayGold() {
@@ -2112,13 +2089,22 @@ async function pollDisplayGold() {
 function renderDisplayGold(g) {
     let el = document.getElementById('display-gold-inner');
     if(!el) return;
+    window._displayGold = g;
+
+    const daySelectHtml = `<div style="margin-bottom:12px;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;">
+            <label style="font-size:0.85rem;color:rgba(255,255,255,0.6);">اليوم:</label>
+            <select id="gold-day-select" style="padding:6px 10px;border-radius:8px;border:2px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:white;font-size:0.85rem;">
+                <option value="1">🎞️ اليوم 1 - المواد الإعلامية</option>
+                <option value="2">🎥 اليوم 2 - استوديو البث</option>
+                <option value="3">🕹️ اليوم 3 - كابتن الدرون</option>
+                <option value="4">🤖 اليوم 4 - الذكاء الاصطناعي</option>
+            </select>
+        </div>`;
+
     if(!g || g.phase === 'idle') {
-        if(g && g.sessionActive) {
-            el.innerHTML = `<p style="color:rgba(255,255,255,0.4);font-size:0.85rem;margin-bottom:8px;">آخر جلسة: ${g.qIndex} أسئلة من 10 لليوم ${g.day}</p>
-                <button class="btn btn-gold" onclick="startGoldRound()" style="font-size:1.2rem;padding:16px 32px;margin:12px 0;">🚀 ابدأ جولة جديدة</button>`;
-        } else {
-            el.innerHTML = `<button class="btn btn-gold" onclick="startGoldRound()" style="font-size:1.2rem;padding:16px 32px;margin:12px 0;">🚀 ابدأ جولة جديدة</button>`;
-        }
+        let extra = (g && g.sessionActive) ? `<p style="color:rgba(255,255,255,0.4);font-size:0.85rem;margin-bottom:8px;">آخر جلسة: ${g.qIndex} سؤال</p>` : '';
+        el.innerHTML = `${extra}${daySelectHtml}
+            <button class="btn btn-gold" onclick="startGoldRound()" style="font-size:1.2rem;padding:16px 32px;margin:12px 0;">🚀 ابدأ الجولة</button>`;
         return;
     }
     if(g.phase === 'ended') {
@@ -2127,45 +2113,66 @@ function renderDisplayGold(g) {
             <h3 style="color:#f59e0b;font-size:1.5rem;margin-bottom:6px;">شكراً على حضوركم!</h3>
             <p style="color:rgba(255,255,255,0.6);font-size:1rem;">أتمنى كانت المنافسة ممتعة 🙌</p>
             <p style="color:rgba(255,255,255,0.3);font-size:0.85rem;margin-top:8px;">أجبتم ${g.qIndex} أسئلة في منافسة الذهب</p>
-            <button class="btn btn-gold" onclick="startGoldRound()" style="font-size:1.2rem;padding:16px 32px;margin:16px 0;">🚀 بدء جلسة جديدة</button>
+            ${daySelectHtml}
+            <button class="btn btn-gold" onclick="startGoldRound()" style="font-size:1.2rem;padding:16px 32px;margin:12px 0;">🚀 ابدأ جلسة جديدة</button>
         </div>`;
         return;
     }
-    let html = `<div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
-                    <span><span style="color:#f59e0b;font-weight:700;">سؤال ${g.qIndex} / 10</span><span style="color:rgba(255,255,255,0.4);font-size:0.8rem;margin-right:8px;">(اليوم ${g.day})</span></span>
-                    <span style="color:rgba(255,255,255,0.5);">👥 ${g.answerCount||0} أجابوا</span>
-                </div>`;
-    if(g.phase === 'question') {
-        html += `<div class="dg-question">${g.question}</div>
-                <div style="text-align:center;">`;
-        g.options.forEach((opt, i) => {
-            html += `<span class="dg-opt">${opt}</span>`;
-        });
-        html += `</div>`;
-    }
-    else if(g.phase === 'answered' || g.phase === 'result') {
-        html += `<div class="dg-question">${g.question}</div>
-                <div style="text-align:center;margin-bottom:8px;">`;
-        g.options.forEach((opt, i) => {
+
+    // question / answered / result
+    let header = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:10px;gap:8px;">
+        <span style="color:#f59e0b;font-weight:700;font-size:1.1rem;">سؤال ${g.qIndex} / 10</span>
+        <span id="display-timer" style="font-size:1.1rem;font-weight:700;color:#60a5fa;direction:ltr;unicode-bidi:embed;">⏱️ --</span>
+        <span style="color:rgba(255,255,255,0.5);">👥 ${g.answerCount||0} أجابوا</span>
+    </div>`;
+
+    let qHtml = `<div class="dg-question" style="font-size:2rem;line-height:1.5;padding:20px;">${g.question}</div>`;
+
+    let opts = `<div style="text-align:center;margin:10px 0;">`;
+    g.options.forEach((opt, i) => {
+        if(g.phase === 'question') {
+            opts += `<span class="dg-opt" style="font-size:1.1rem;padding:10px 18px;">${opt}</span>`;
+        } else {
             let cls = 'dg-opt' + (i === g.correctIndex ? ' correct' : '');
-            html += `<span class="${cls}">${opt}${i === g.correctIndex ? ' ✅' : ''}</span>`;
-        });
-        html += `</div>`;
-        if(g.winner) {
-            html += `<div class="dg-winner">🏆 ${g.winner}</div>`;
+            opts += `<span class="${cls}" style="font-size:1.1rem;padding:10px 18px;">${opt}${i === g.correctIndex ? ' ✅' : ''}</span>`;
         }
-        if(g.choiceMade) {
-            html += `<div class="dg-result">${g.resultMsg || ''}</div>`;
-        }
-        if(g.phase === 'answered') {
-            html += `<div style="color:rgba(255,255,255,0.4);font-size:0.85rem;margin:4px 0;">⏳ في انتظار اختيار الفائز...</div>`;
-        }
-        html += `<div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
-                    <button class="btn btn-gold" onclick="nextGoldRound()" style="font-size:0.9rem;padding:10px 20px;">▶️ الجولة التالية</button>
-                    <button class="btn btn-back" onclick="endGold()" style="font-size:0.8rem;padding:8px 16px;border-color:#666;">🔚 إنهاء</button>
-                </div>`;
+    });
+    opts += `</div>`;
+
+    let footer = '';
+    if(g.phase === 'answered') {
+        footer += `<div style="color:rgba(255,255,255,0.5);font-size:0.95rem;margin:6px 0;">⏳ الفائز <strong style="color:#f59e0b;">${g.winner}</strong> يختار...</div>`;
     }
-    el.innerHTML = html;
+    if(g.winner && (g.phase==='answered'||g.phase==='result')) {
+        footer += `<div class="dg-winner" style="font-size:1.4rem;">🏆 ${g.winner}</div>`;
+    }
+    if(g.choiceMade) {
+        footer += `<div class="dg-result" style="font-size:1.1rem;">${g.resultMsg || ''}</div>`;
+    }
+    if(g.phase === 'answered' || g.phase === 'result') {
+        if(g.qIndex >= 10) {
+            footer += `<div style="text-align:center;margin-top:14px;">
+                <button class="btn btn-gold" onclick="endGold()" style="font-size:1rem;padding:12px 28px;">🔚 إنهاء الجولة</button>
+            </div>`;
+        } else {
+            footer += `<div style="text-align:center;margin-top:14px;">
+                <button class="btn btn-gold" onclick="nextGoldRound()" style="font-size:1rem;padding:12px 28px;">▶️ التالي (${g.qIndex+1}/10)</button>
+            </div>`;
+        }
+    }
+    el.innerHTML = header + qHtml + opts + footer;
+    updateDisplayTimer();
+}
+
+function updateDisplayTimer() {
+    let g = window._displayGold;
+    let el = document.getElementById('display-timer');
+    if(!el || !g) return;
+    if(g.phase !== 'question') { el.textContent = '⏱️ --'; return; }
+    let start = g.startAt || Date.now();
+    let elapsed = Math.floor((Date.now() - start) / 1000);
+    let remain = Math.max(0, 30 - elapsed);
+    el.textContent = '⏱️ ' + remain + 's';
 }
 
 // ===================================================================

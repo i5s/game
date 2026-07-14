@@ -10,10 +10,27 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 app.use(express.json());
 
 // ---- Data helpers ----
+const BANK_NAME = '🏦 بنك النقاط';
+function ensureBank(data) {
+    if (!data[BANK_NAME]) data[BANK_NAME] = { score: 1000, days: {}, group: '0', isBank: true };
+    return data;
+}
 function readData() {
-    try { return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); } catch { return {}; }
+    let data;
+    try { data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); } catch { data = {}; }
+    return ensureBank(data);
 }
 function writeData(d) { fs.writeFileSync(DATA_FILE, JSON.stringify(d, null, 2)); }
+function findWeakest(data, excludeName) {
+    let weakest = null, min = Infinity;
+    for (let n in data) {
+        if (n === excludeName) continue;
+        if (data[n].isBank) continue;
+        let s = data[n].score || 0;
+        if (s < min) { min = s; weakest = n; }
+    }
+    return weakest;
+}
 
 // ---- Persistent data API ----
 app.get('/api/students', (req, res) => res.json(readData()));
@@ -76,7 +93,7 @@ const GOLD_QUESTIONS_BY_DAY = {
     { q: "ماذا نسمي الشاشة التي يقرأ منها المذيع؟", opts: ["Teleprompter", "تلفاز", "كمبيوتر", "آيباد"], correct: 0 },
     { q: "ما معنى كلمة Live؟", opts: ["بث مباشر", "تسجيل", "تصوير", "مونتاج"], correct: 0 },
     { q: "ماذا يفعل مهندس الاستوديو؟", opts: ["يتحكم بالأجهزة", "يطبخ", "يقود", "يسبح"], correct: 0 },
-    { q: "ما الجهاز الذي يسجل الصوت؟", opts: ["ميكروفون", "كاميرا", "طابعة", "فأرة"], correct: 0 },
+    { q: "ما الذي نرتديه لمنع صوت الهواء أثناء التسجيل؟", opts: ["طوق الصوت (Windscreen)", "خوذة", "نظارة", "قفازات"], correct: 0 },
     { q: "أين يجلس المذيع في الاستوديو؟", opts: ["خلف المنصة", "في المطبخ", "في السيارة", "على السرير"], correct: 0 },
     { q: "ما معنى كلمة Cue؟", opts: ["إشارة البدء", "إشارة نهاية", "توقف", "انتظار"], correct: 0 },
     { q: "ماذا نستخدم للإضاءة في الاستوديو؟", opts: ["لمبات تصوير", "شمعة", "مصباح جيب", "ليزر"], correct: 0 },
@@ -128,6 +145,7 @@ let game = {
     startAt: 0,
     timerSec: 15,
     securePlayers: [],
+    usedQuestions: { 1: [], 2: [], 3: [], 4: [] },
 };
 
 // Called by "next" — keeps session alive, qIndex unchanged
@@ -152,6 +170,7 @@ function endSession() {
     game.phase = 'ended';
     game.sessionActive = false;
     game.round = 0;
+    game.qIndex = 0;
     game.question = null;
     game.options = [];
     game.correctIndex = -1;
@@ -163,11 +182,23 @@ function endSession() {
     game.resultMsg = '';
     game.startAt = 0;
     game.securePlayers = [];
+    game.usedQuestions = { 1: [], 2: [], 3: [], 4: [] };
 }
 
 function pickQuestion(day) {
     let pool = GOLD_QUESTIONS_BY_DAY[day] || GOLD_QUESTIONS_BY_DAY[1];
-    let q = pool[Math.floor(Math.random() * pool.length)];
+    if (!game.usedQuestions[day]) game.usedQuestions[day] = [];
+    let used = game.usedQuestions[day];
+    let available = pool.map((_, i) => i).filter(i => !used.includes(i));
+    if (available.length === 0) {
+        // All questions for this day used — reset and reuse
+        used = [];
+        available = pool.map((_, i) => i);
+    }
+    let idx = available[Math.floor(Math.random() * available.length)];
+    used.push(idx);
+    game.usedQuestions[day] = used;
+    let q = pool[idx];
     game.day = day;
     game.question = q.q;
     game.options = [...q.opts];
@@ -223,6 +254,18 @@ app.post('/api/game/start', (req, res) => {
     res.json({ ok: true, round: game.round, qIndex: game.qIndex, day });
 });
 
+app.post('/api/game/advance', (req, res) => {
+    let day = req.body.day || game.day || 1;
+    resetGame();
+    if (game.phase === 'ended') game.qIndex = 0;
+    game.round++;
+    game.qIndex++;
+    game.sessionActive = true;
+    pickQuestion(day);
+    game.phase = 'question';
+    res.json({ ok: true, round: game.round, qIndex: game.qIndex, day });
+});
+
 app.post('/api/game/answer', (req, res) => {
     let { name, answer } = req.body;
     if (!name || answer === undefined) return res.status(400).json({ error: 'name & answer required' });
@@ -249,17 +292,18 @@ app.post('/api/game/answer', (req, res) => {
 });
 
 app.post('/api/game/choice', (req, res) => {
-    let { name, action, target } = req.body;
+    let { name, action } = req.body;
     if (game.winner !== name) return res.status(400).json({ error: 'not_winner' });
     if (game.phase !== 'answered') return res.json({ ok: false, reason: 'wrong_phase' });
 
     let data = readData();
     let points = 30;
     let msg = '';
+    let bank = data[BANK_NAME];
 
     if (action === 'secure') {
         if (!game.securePlayers.includes(name)) game.securePlayers.push(name);
-        msg = `🔒 ${name} أمّن مركزه! ما أحد يقدر يخصمه أو يسرق منه بالجولة الجاية.`;
+        msg = `🔒 ${name} أمّن مركزه!`;
         game.phase = 'result';
         game.choiceMade = { action, target: name, points: 0 };
         game.resultMsg = msg;
@@ -267,27 +311,25 @@ app.post('/api/game/choice', (req, res) => {
         return res.json({ ok: true });
     }
 
-    if (!target || !data[target]) return res.status(400).json({ error: 'invalid_target' });
-
-    // Group check: only same group
-    let winnerGroup = game.winnerGroup || (data[name] && data[name].group);
-    let targetGroup = data[target] && data[target].group;
-    if (winnerGroup && targetGroup && winnerGroup !== targetGroup) {
-        return res.status(403).json({ error: 'wrong_group', msg: `${target} من مجموعة ${targetGroup}، وأنت من مجموعة ${winnerGroup}!` });
-    }
-
     if (action === 'deduct') {
-        data[target].score = Math.max(0, (data[target].score || 0) - points);
-        msg = `🗡️ ${name} خصم ${points} نقطة من ${target}!`;
-    } else if (action === 'steal') {
-        let stolen = Math.min(points, data[target].score || 0);
-        data[target].score = Math.max(0, (data[target].score || 0) - stolen);
-        data[name].score = (data[name].score || 0) + stolen;
-        msg = `💰 ${name} سرق ${stolen} نقطة من ${target}!`;
+        let taken = Math.min(points, bank.score || 0);
+        bank.score = (bank.score || 0) - taken;
+        data[name].score = (data[name].score || 0) + taken;
+        msg = `🗡️ ${name} أخذ ${taken} نقطة من البنك!`;
+    } else if (action === 'give') {
+        let weakest = findWeakest(data, name);
+        if (weakest) {
+            let taken = Math.min(points, bank.score || 0);
+            bank.score = (bank.score || 0) - taken;
+            data[weakest].score = (data[weakest].score || 0) + points;
+            msg = `🎁 ${name} أعطى ${points} نقطة لـ ${weakest} (الأضعف)!`;
+        } else {
+            msg = `🎁 ${name} أراد يعطي لكن ما في أضعف!`;
+        }
     }
 
     game.phase = 'result';
-    game.choiceMade = { action, target, points };
+    game.choiceMade = { action, points };
     game.resultMsg = msg;
     writeData(data);
     res.json({ ok: true });
@@ -317,6 +359,9 @@ app.post('/api/game/end', (req, res) => {
 // ---- Static files & SPA catch-all ----
 app.use(express.static(__dirname));
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
+
+// ---- Ensure bank exists on disk at startup ----
+writeData(readData());
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`
