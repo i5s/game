@@ -55,6 +55,7 @@
         .user-bar .logout-link:hover { opacity:1; }
         .screen { display: none; }
         .screen.active { display: block; animation: fadeIn 0.3s ease-out; }
+        .gd-screen.screen.active { display: flex; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pop { 0%{transform:scale(0.85)} 50%{transform:scale(1.06)} 100%{transform:scale(1)} }
         @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
@@ -199,7 +200,7 @@
         #display-leaderboard .dl-score { font-weight:800; color:var(--color-primary); direction:ltr; unicode-bidi:embed; }
 
         /* === GOLD COMPETITION DISPLAY (?display=gold) === */
-        .gd-screen { position:fixed; top:0; left:0; right:0; bottom:0; z-index:999; background: radial-gradient(circle at 50% -10%, #243049, #0b1020 70%); color:#e2e8f0; display:flex; flex-direction:column; padding:16px 22px; overflow-y:auto; animation:none; }
+        .gd-screen { position:fixed; top:0; left:0; right:0; bottom:0; z-index:999; background: radial-gradient(circle at 50% -10%, #243049, #0b1020 70%); color:#e2e8f0; flex-direction:column; padding:16px 22px; overflow-y:auto; animation:none; }
         .gd-logo { text-align:center; margin-bottom:8px; }
         .gd-logo img { max-height:64px; }
         .gd-logo h1 { color:#f59e0b; font-size:1.1rem; margin:0; }
@@ -363,6 +364,10 @@
 </div>
 
 <script>
+// Safety net: clear any stale service worker so an old cached page can't stick.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+}
 // ===================================================================
 //  DATA
 // ===================================================================
