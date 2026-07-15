@@ -217,6 +217,11 @@
         .pr-counter { font-size:1rem; color:#94a3b8; }
         .pr-progress { width:260px; height:6px; border-radius:6px; background:rgba(255,255,255,0.12); overflow:hidden; }
         .pr-progress-bar { height:100%; width:0%; background:linear-gradient(90deg,#3b82f6,#22d3ee); transition:width .4s ease; }
+        .pr-video-wrap { width:100%; max-width:680px; margin:6px auto 12px; aspect-ratio:16/9; border-radius:14px; overflow:hidden; background:#000; box-shadow:0 10px 36px rgba(0,0,0,0.45); }
+        .pr-video { width:100%; height:100%; border:0; }
+        .pr-video-link { display:inline-block; margin-top:4px; color:#60a5fa; font-size:0.95rem; text-decoration:none; }
+        .pr-video-link:hover { text-decoration:underline; }
+        .pr-video-cap { margin-top:10px; font-size:1.05rem; color:rgba(255,255,255,0.75); }
         .pr-controls { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
         .gd-logo { text-align:center; margin-bottom:8px; }
         .gd-logo img { max-height:64px; }
@@ -589,6 +594,25 @@ const PRESENTATIONS = {
       { icon:"🏞️", title:"نصور جمال الشارقة", points:["يساعدنا الدرون على تصوير:","🏖️ الشواطئ.","🌄 الجبال.","🌴 الحدائق.","🏛️ المعالم السياحية.","✨ من زوايا لا تُرى من الأرض."] },
       { icon:"👨‍✈️", title:"صفات كابتن الدرون", points:["🧠 مركز.","⚖️ مسؤول.","🎯 دقيق.","📸 مبدع.","🛡️ يحافظ على سلامة الجميع."] },
       { icon:"🏆", title:"ماذا تعلمنا اليوم؟", points:["🚁 ما هو الدرون.","🌍 كيف يعرف مكانه.","⚙️ أجزاؤه.","🎮 طريقة التحكم به.","📸 أساسيات التصوير.","🛡️ قواعد السلامة.","✨ رسالة أخيرة: كل صورة رائعة تبدأ بطيران آمن، وكل كابتن ناجح يبدأ بالتعلّم والممارسة."] }
+    ]
+  },
+  4: {
+    title: "كابتن الذكاء الاصطناعي",
+    slides: [
+      { icon:"🤖", title:"كابتن الذكاء الاصطناعي", points:["رحلة الإعلامي الصغير في صناعة المحتوى بالذكاء الاصطناعي.","اليوم سنتعلّم كيف نكتب برومبت احترافي، وكيف نحوّل النص والصور إلى فيديو مبهر."] },
+      { icon:"💬", title:"ما هو البرومبت (Prompt)؟", points:["البرومبت هو الأمر أو الوصف اللي تعطيه للذكاء الاصطناعي عشان يصنع صورة أو فيديو.","كلما كان وصفك أوضح، كانت النتيجة أقرب لخيالك.","💡 هل تعلم؟ أشهر نماذج الصور (Midjourney و DALL·E) تفهم العربية والإنجليزية."] },
+      { icon:"🎯", title:"لماذا البرومبت الاحترافي مهم؟", points:["برومبت عشوائي ← نتيجة عشوائية.","برومبت منظّم ← صورة دقيقة، إضاءة جميلة، ستايل واضح.","✅ توفير وقت — ✅ جودة أعلى — ✅ تحكّم كامل."] },
+      { icon:"🧱", title:"تركيبة البرومبت الاحترافي (بالعربي)", points:["الموضوع: ماذا يظهر؟","البيئة/المكان: أين؟","الإضاءة: طبيعية / سينمائية / غروب…","الكاميرا: زاوية، قرب أو بُعد.","الستايل: واقعي / رسوم / ثلاثي الأبعاد…","⛔ النفي: شنو تبي تتجنّبه؟"] },
+      { icon:"✍️", title:"مثال حي: برومبت عربي متكامل", points:["«قطّة صغيرة ترتدي نظارة شمسية، تجلس على شاطئ الشارقة وقت الغروب، إضاءة دافئة سينمائية، تصوير بزاوية منخفضة، ستايل ثلاثي الأبعاد ناعم، ألوان زاهية --ar 16:9»","🔍 حلّلنا: الموضوع + المكان + الإضاءة + الكاميرا + الستايل (والقياس في --ar)."] },
+      { icon:"🖼️", title:"التوليد من نص إلى صورة (Text → Image)", points:["أدوات حية: Midjourney — DALL·E 3 — Stable Diffusion — Adobe Firefly.","الخطوات: تكتب البرومبت ← يولّد 4 صور ← تختار الأفضل ← تحسّنه.","مثال: «مبنى تراثي في الشارقة، تصميم إعلاني، إضاءة نهارية نظيفة»."] },
+      { icon:"🎞️", title:"التوليد من صورة إلى فيديو (Image → Video)", points:["تبدأ بصورة ثابتة، والأداة تحرّكها بذكاء.","أدوات حية: Runway Gen-3 — Kling — Luma Dream Machine.","مثال: صورة طائرة ورقية ← «let the kite dance in the wind, gentle camera move»."] },
+      { icon:"🎬", title:"التوليد من نص إلى فيديو (Text → Video)", points:["تكتب وصفاً كاملاً فيولّد مقطع فيديو.","أدوات حية: Sora — Kling (وضع النص) — Google Veo — Runway.","مثال: «طفل يصور معالم الشارقة بالدرون عند الفجر، ستايل وثائقي، حركة كاميرا بطيئة»."] },
+      { icon:"🎞️🎞️", title:"التوليد فريم فريم (Frame-by-Frame)", points:["تولّد إطارات متسقة (نفس الشخصية والستايل) ثم تربطها بحركة.","الطريقة: ستوري بورد ← تحويل كل فريم لفيديو قصير ← دمج.","أدوات: AnimateDiff — Runway/Kling وضع الإطار — أو Midjourney + Luma.","💡 السر: ثبّت الـ Seed والستايل عشان تطابق الفريمات."] },
+      { icon:"🎨", title:"الأنماط والستايلات (Genres / Styles)", points:["📷 واقعي (Photorealistic) — 🎥 سينمائي (Cinematic)","🧸 ثلاثي الأبعاد (Pixar/3D) — 🌸 أنمي (Anime)","💧 ألوان مائية (Watercolor) — 🔷 أيزومتريك (Isometric)","🟢 لو-بولي (Low-poly) — 📰 تحريري (Editorial)","كلمات سحرية: «cinematic lighting» — «8k» — «studio quality» — «miniature»."] },
+      { icon:"🛠️", title:"نصائح احترافية", points:["✅ اكتب بالعربي بوضوح + أضف كلمات إنجليزية للستايل.","✅ كرّر وأعد التوليد لتحسين النتيجة.","✅ استخدم النفي: «بدون تشويه، بدون أيدي إضافية».","✅ ثبّت القياس والستايل عبر التجارب."] },
+      { icon:"🚀", title:"أمثلة حية متقدمة", points:["نص←صورة: «مقدّم نشرة أخبار عربي، استوديو 8K، إضاءة درامية».","صورة←فيديو: صورة مراسل ← «walk and talk, newsroom background».","نص←فيديو: «تقرير عن بيئة الشارقة، ستايل وثائقي هادئ»."] },
+      { icon:"📺", title:"فيديو شامل (الختام)", type:"video", video:"https://notebooklm.google.com/notebook/2892497a-4951-4ef3-ae74-c3fc2a1a29fb/artifact/2336c161-7770-4184-ab21-f330557aa3b1?utm_source=nlm_web_share&utm_medium=google_oo&utm_campaign=art_share_1&utm_content=&utm_smc=nlm_web_share_google_oo_art_share_1_", points:["شاهدوا الفيديو الشامل اللي يجمع كل اللي تعلمناه اليوم 🎬"] },
+      { icon:"🏆", title:"رسالة أخيرة", points:["كل محتوى رائع يبدأ ببرومبت ذكي.","الكابتن الناجح يتعلّم، يجرب، ويحسّن.","تحدّى نفسك: صمّم برومبتك الخاص اليوم! 🚀"] }
     ]
   }
 };
@@ -2434,7 +2458,14 @@ function renderPresentationScreen(p) {
     document.getElementById('pr-day').textContent = `📅 اليوم ${p.day} • ${pres.title}`;
     document.getElementById('pr-icon').textContent = slide.icon || '📽️';
     document.getElementById('pr-title').textContent = slide.title || '';
-    document.getElementById('pr-points').innerHTML = (slide.points || []).map(pt => `<li>${pt}</li>`).join('');
+    let pts = document.getElementById('pr-points');
+    if(slide.type === 'video') {
+        pts.innerHTML = `<div class="pr-video-wrap"><iframe class="pr-video" src="${slide.video}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe></div>` +
+            `<a class="pr-video-link" href="${slide.video}" target="_blank" rel="noopener">🔗 افتح الفيديو في تبويب جديد</a>` +
+            (slide.points ? `<div class="pr-video-cap">${(slide.points||[]).map(pt=>`<div>${pt}</div>`).join('')}</div>` : '');
+    } else {
+        pts.innerHTML = (slide.points || []).map(pt => `<li>${pt}</li>`).join('');
+    }
     document.getElementById('pr-counter').textContent = `${p.index + 1} / ${p.total || pres.slides.length}`;
     let bar = document.getElementById('pr-progress-bar');
     if(bar) bar.style.width = `${((p.index + 1) / (p.total || pres.slides.length)) * 100}%`;
