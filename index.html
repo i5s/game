@@ -2242,6 +2242,11 @@ function loadDisplay() {
         let board = document.getElementById('display-leaderboard');
         board.innerHTML = goldBoardHtml(db) || '<div style="padding:30px;text-align:center;opacity:0.6;">⏳ في انتظار المتسابقين...</div>';
 
+        // If a pre-day presentation is active, take over the projector screen
+        fetch('/api/presentation', { cache:'no-store' }).then(r=>r.json()).then(p => {
+            if(p && p.active) { switchScreen('screen-presentation'); }
+        }).catch(()=>{});
+
         // If game is active, jump to the competition page; else show lobby prompt
         fetch('/api/game', { cache:'no-store' }).then(r=>r.json()).then(g => {
             renderDisplayLobby(g);
