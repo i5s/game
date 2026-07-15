@@ -2397,6 +2397,9 @@ function loadPresentation() {
             }
         });
     }
+    let params = new URLSearchParams(window.location.search);
+    let day = parseInt(params.get('day')) || 3;
+    if(!window._localPresent) window._localPresent = { day, index: 0 };
     if(!window._presentInterval) window._presentInterval = setInterval(pollPresentation, 2000);
     pollPresentation();
 }
@@ -2405,9 +2408,16 @@ async function pollPresentation() {
     try {
         let r = await fetch('/api/presentation', { cache:'no-store' });
         let p = await r.json();
-        if(!p || !p.active) { window.location.search = '?display'; return; }
-        renderPresentationScreen(p);
+        if(p && p.active) {
+            window._localPresent = { day: p.day, index: p.index };
+            renderPresentationScreen(p);
+            return;
+        }
     } catch(e) {}
+    // Standalone mode: render local slides even if admin hasn't launched
+    let lp = window._localPresent || { day: 3, index: 0 };
+    let total = (PRESENTATIONS[lp.day] && PRESENTATIONS[lp.day].slides.length) || 0;
+    renderPresentationScreen({ day: lp.day, index: lp.index, total, active: true });
 }
 
 function renderPresentationScreen(p) {
@@ -2425,17 +2435,19 @@ function renderPresentationScreen(p) {
 }
 
 function presentGoto(dir) {
-    let p = window._presentation || { day:3, index:0, total:6 };
-    let total = (PRESENTATIONS[p.day] && PRESENTATIONS[p.day].slides.length) || p.total;
-    fetch('/api/presentation/goto', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ dir, total }) })
-        .then(r => r.json())
-        .then(d => { if(d && d.presentation) renderPresentationScreen(d.presentation); })
-        .catch(()=>{});
+    let lp = window._localPresent || { day: 3, index: 0 };
+    let total = (PRESENTATIONS[lp.day] && PRESENTATIONS[lp.day].slides.length) || 0;
+    if(dir === 'next') lp.index = Math.min(total - 1, lp.index + 1);
+    else if(dir === 'prev') lp.index = Math.max(0, lp.index - 1);
+    window._localPresent = lp;
+    fetch('/api/presentation/goto', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ dir, total }) }).catch(()=>{});
+    renderPresentationScreen({ day: lp.day, index: lp.index, total, active: true });
 }
 function nextPresentSlide() { presentGoto('next'); }
 function prevPresentSlide() { presentGoto('prev'); }
 function exitPresentation() {
     fetch('/api/presentation/end', { method:'POST', headers:{'Content-Type':'application/json'} }).catch(()=>{});
+    window.location.search = '?display';
 }
 
 async function adminStartPresentation() {
