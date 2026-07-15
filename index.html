@@ -56,6 +56,7 @@
         .screen { display: none; }
         .screen.active { display: block; animation: fadeIn 0.3s ease-out; }
         .gd-screen.screen.active { display: flex; }
+        .present-screen.screen.active { display: flex; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pop { 0%{transform:scale(0.85)} 50%{transform:scale(1.06)} 100%{transform:scale(1)} }
         @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
@@ -201,6 +202,22 @@
 
         /* === GOLD COMPETITION DISPLAY (?display=gold) === */
         .gd-screen { position:fixed; top:0; left:0; right:0; bottom:0; z-index:999; background: radial-gradient(circle at 50% -10%, #243049, #0b1020 70%); color:#e2e8f0; flex-direction:column; padding:16px 22px; overflow-y:auto; animation:none; }
+
+        /* === PRESENTATION (pre-day briefing on projector) === */
+        .present-screen { position:fixed; top:0; left:0; right:0; bottom:0; z-index:999; background: radial-gradient(circle at 50% -10%, #1e3a5f, #0b1020 70%); color:#e2e8f0; flex-direction:column; align-items:center; justify-content:center; padding:40px 24px; overflow-y:auto; animation:none; }
+        .pr-logo { text-align:center; margin-bottom:10px; }
+        .pr-day { text-align:center; font-size:1.1rem; font-weight:800; color:#f59e0b; margin-bottom:18px; }
+        .pr-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:22px; padding:36px 40px; max-width:900px; width:100%; text-align:center; box-shadow:0 0 30px rgba(0,0,0,0.4); }
+        .pr-icon { font-size:4rem; margin-bottom:8px; }
+        .pr-title { font-size:2.6rem; font-weight:900; margin-bottom:18px; color:#fff; }
+        .pr-points { list-style:none; padding:0; margin:0; text-align:right; display:inline-block; }
+        .pr-points li { font-size:1.5rem; line-height:2; padding:6px 0; border-bottom:1px dashed rgba(255,255,255,0.12); }
+        .pr-points li::before { content:"▸ "; color:#f59e0b; }
+        .pr-footer { margin-top:22px; display:flex; flex-direction:column; align-items:center; gap:12px; }
+        .pr-counter { font-size:1rem; color:#94a3b8; }
+        .pr-progress { width:260px; height:6px; border-radius:6px; background:rgba(255,255,255,0.12); overflow:hidden; }
+        .pr-progress-bar { height:100%; width:0%; background:linear-gradient(90deg,#3b82f6,#22d3ee); transition:width .4s ease; }
+        .pr-controls { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
         .gd-logo { text-align:center; margin-bottom:8px; }
         .gd-logo img { max-height:64px; }
         .gd-logo h1 { color:#f59e0b; font-size:1.1rem; margin:0; }
@@ -362,6 +379,26 @@
         <div class="gd-controls" id="gd-controls"></div>
     </div>
 </div>
+
+    <!-- ===== SCREEN: PRESENTATION (pre-day briefing, projector) ===== -->
+    <div id="screen-presentation" class="screen present-screen">
+        <div class="pr-logo" id="pr-logo"></div>
+        <div class="pr-day" id="pr-day"></div>
+        <div class="pr-card">
+            <div class="pr-icon" id="pr-icon">📽️</div>
+            <h1 class="pr-title" id="pr-title"></h1>
+            <ul class="pr-points" id="pr-points"></ul>
+        </div>
+        <div class="pr-footer">
+            <span class="pr-counter" id="pr-counter">1 / 1</span>
+            <div class="pr-progress"><div class="pr-progress-bar" id="pr-progress-bar"></div></div>
+            <div class="pr-controls">
+                <button class="btn btn-back" onclick="prevPresentSlide()">◀️ السابق</button>
+                <button class="btn btn-gold" onclick="nextPresentSlide()">▶️ التالي</button>
+                <button class="btn btn-back" onclick="exitPresentation()">🚪 خروج</button>
+            </div>
+        </div>
+    </div>
 
 <script>
 // Safety net: clear any stale service worker so an old cached page can't stick.
@@ -534,6 +571,22 @@ const DAY3_ACTIVITIES = [
   { type:"unscramble", title:"فك حروف الدرون", desc:"رتب الحروف لتكون كلمة صحيحة:", word:"كاميرا", hint:"أداة تصوير", points:200, time:30 }
 ];
 
+// ---- Presentations (pre-day briefing slides shown on the projector) ----
+// TODO: replace placeholder text with the real content from the teacher's deck.
+const PRESENTATIONS = {
+  3: {
+    title: "كابتن طيران الدرون",
+    slides: [
+      { icon:"🕹️", title:"عن اليوم الثالث", points:["تدريب كابتن طيران الدرون","نتعلّم قيادة وتصوير الطائرة بدون طيار","جاهزون؟"] },
+      { icon:"🔧", title:"كيفية عمل الطيارة", points:["بطارية LiPo","4 ريشات (درون رباعي)","جهاز تحكم","نظام GPS + كاميرا FPV"] },
+      { icon:"✅", title:"خطوات قبل الطيران", points:["فحص شحن البطارية","معايرة البوصلة","التأكد من إشارة GPS","تعبئة التصريح"] },
+      { icon:"⚠️", title:"التحذيرات", points:["ممنوع الطيران قرب المطارات","احترم السقف (أقصى ارتفاع)","تجنّب التجمعات والناس"] },
+      { icon:"🆘", title:"السلامة والطوارئ", points:["فقد الإشارة ← زر العودة للمنزل (RTH)","بطارية ضعيفة ← إعادة سريعة","حافظوا على خط الرؤية"] },
+      { icon:"🚀", title:"لنبدأ!", points:["ادخلوا المنصة","اختاروا اليوم 3","انطلقوا!"] }
+    ]
+  }
+};
+
 // ---- Day 4: AI ----
 const DAY4_ACTIVITIES = [
   { type:"ai-image", title:"كاشف التزييف بالذكاء الاصطناعي", desc:"هل هذه الصورة حقيقية أم مولدة؟", image:"ai-cat", points:150, answer:"ai" },
@@ -663,6 +716,7 @@ function switchScreen(id) {
     if(id === 'screen-admin') loadAdmin();
     if(id === 'screen-display') { loadDisplay(); _displayInterval = setInterval(loadDisplay, 2000); }
     else if(id === 'screen-display-gold') { loadDisplayGold(); _displayInterval = setInterval(pollDisplayGold, 2000); }
+    else if(id === 'screen-presentation') { if(_displayInterval){clearInterval(_displayInterval);_displayInterval=null;} loadPresentation(); }
     else { if(_displayInterval) { clearInterval(_displayInterval); _displayInterval = null; } }
 }
 
@@ -2035,6 +2089,9 @@ function loadAdmin() {
             <button class="btn btn-orange" onclick="adminNextGold()" style="font-size:0.85rem;padding:10px 18px;">▶️ السؤال التالي</button>
             <button class="btn btn-back" onclick="adminEndGold()" style="font-size:0.8rem;padding:8px 14px;">🔚 إنهاء</button>
         </div>
+        <div style="margin-top:10px;">
+            <button class="btn btn-green" onclick="adminStartPresentation()" style="font-size:0.9rem;padding:12px 22px;width:100%;">📽️ عرض تقديمي (قبل البداية)</button>
+        </div>
         <p style="font-size:0.78rem;color:rgba(255,255,255,0.45);margin-top:10px;">🟢 ابدأ من هنا. السؤال التالي يمكن من الإدارة أو من شاشة العرض.</p>
     </div>`;
     document.getElementById('admin-content').innerHTML = html;
@@ -2317,6 +2374,75 @@ function updateDisplayTimer() {
 }
 
 // ===================================================================
+//  PRESENTATION (pre-day briefing on projector)
+// ===================================================================
+function loadPresentation() {
+    let logoContainer = document.getElementById('pr-logo');
+    if(logoContainer && !logoContainer.querySelector('img')) {
+        let orig = document.querySelector('.brand-header');
+        logoContainer.innerHTML = orig ? orig.innerHTML : `<h1>إعلامي المستقبل</h1><p>FUTURE JOURNALIST</p>`;
+    }
+    if(!window._presentKey) {
+        window._presentKey = true;
+        window.addEventListener('keydown', (e) => {
+            if(document.getElementById('screen-presentation') && document.getElementById('screen-presentation').classList.contains('active')) {
+                if(e.key === 'ArrowRight' || e.key === ' ') nextPresentSlide();
+                else if(e.key === 'ArrowLeft') prevPresentSlide();
+                else if(e.key === 'Escape') exitPresentation();
+            }
+        });
+    }
+    if(!window._presentInterval) window._presentInterval = setInterval(pollPresentation, 2000);
+    pollPresentation();
+}
+
+async function pollPresentation() {
+    try {
+        let r = await fetch('/api/presentation', { cache:'no-store' });
+        let p = await r.json();
+        if(!p || !p.active) { window.location.search = '?display'; return; }
+        renderPresentationScreen(p);
+    } catch(e) {}
+}
+
+function renderPresentationScreen(p) {
+    window._presentation = p;
+    let pres = PRESENTATIONS[p.day];
+    if(!pres) return;
+    let slide = pres.slides[p.index] || pres.slides[0];
+    document.getElementById('pr-day').textContent = `📅 اليوم ${p.day} • ${pres.title}`;
+    document.getElementById('pr-icon').textContent = slide.icon || '📽️';
+    document.getElementById('pr-title').textContent = slide.title || '';
+    document.getElementById('pr-points').innerHTML = (slide.points || []).map(pt => `<li>${pt}</li>`).join('');
+    document.getElementById('pr-counter').textContent = `${p.index + 1} / ${p.total || pres.slides.length}`;
+    let bar = document.getElementById('pr-progress-bar');
+    if(bar) bar.style.width = `${((p.index + 1) / (p.total || pres.slides.length)) * 100}%`;
+}
+
+function presentGoto(dir) {
+    let p = window._presentation || { day:3, index:0, total:6 };
+    let total = (PRESENTATIONS[p.day] && PRESENTATIONS[p.day].slides.length) || p.total;
+    fetch('/api/presentation/goto', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ dir, total }) })
+        .then(r => r.json())
+        .then(d => { if(d && d.presentation) renderPresentationScreen(d.presentation); })
+        .catch(()=>{});
+}
+function nextPresentSlide() { presentGoto('next'); }
+function prevPresentSlide() { presentGoto('prev'); }
+function exitPresentation() {
+    fetch('/api/presentation/end', { method:'POST', headers:{'Content-Type':'application/json'} }).catch(()=>{});
+}
+
+async function adminStartPresentation() {
+    let day = parseInt(document.getElementById('admin-gold-day')?.value || '3');
+    let total = (PRESENTATIONS[day] && PRESENTATIONS[day].slides.length) || 0;
+    try {
+        await fetch('/api/presentation/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ day, total }) });
+        loadAdmin();
+    } catch(e) { alert('فشل تشغيل العرض'); }
+}
+
+// ===================================================================
 //  ROUTING & INIT
 // ===================================================================
 (async function initApp() {
@@ -2331,6 +2457,7 @@ function updateDisplayTimer() {
     if(params.has('display')) {
         let sub = params.get('display');
         if(sub === 'gold') switchScreen('screen-display-gold');
+        else if(sub === 'present') switchScreen('screen-presentation');
         else switchScreen('screen-display');
         return;
     }

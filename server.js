@@ -370,6 +370,31 @@ app.post('/api/game/end', (req, res) => {
     res.json({ ok: true });
 });
 
+// ---- Presentation API (pre-day briefing on projector) ----
+let presentation = { active: false, day: 3, index: 0, total: 0 };
+
+app.get('/api/presentation', (req, res) => res.json(presentation));
+
+app.post('/api/presentation/start', (req, res) => {
+    let day = parseInt(req.body.day) || 3;
+    let total = parseInt(req.body.total) || 0;
+    presentation = { active: true, day, index: 0, total };
+    res.json({ ok: true, presentation });
+});
+
+app.post('/api/presentation/goto', (req, res) => {
+    let total = parseInt(req.body.total) || presentation.total || 0;
+    if (req.body.dir === 'next') presentation.index = Math.min(total - 1, presentation.index + 1);
+    else if (req.body.dir === 'prev') presentation.index = Math.max(0, presentation.index - 1);
+    presentation.total = total;
+    res.json({ ok: true, presentation });
+});
+
+app.post('/api/presentation/end', (req, res) => {
+    presentation.active = false;
+    res.json({ ok: true, presentation });
+});
+
 // ---- Static files & SPA catch-all ----
 app.use((req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
 app.use(express.static(__dirname, { setHeaders: (res) => res.setHeader('Cache-Control', 'no-store') }));
