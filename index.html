@@ -222,6 +222,10 @@
         .pr-video-link { display:inline-block; margin-top:4px; color:#60a5fa; font-size:0.95rem; text-decoration:none; }
         .pr-video-link:hover { text-decoration:underline; }
         .pr-video-cap { margin-top:10px; font-size:1.05rem; color:rgba(255,255,255,0.75); }
+        .pr-qr-card { display:flex; align-items:center; gap:16px; margin-top:18px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); border-radius:16px; padding:16px; max-width:560px; }
+        .pr-qr-img { width:150px; height:150px; background:#fff; border-radius:12px; padding:6px; flex-shrink:0; }
+        .pr-qr-cap { font-size:1rem; color:rgba(255,255,255,0.85); text-align:right; line-height:1.6; }
+        .pr-qr-url { color:#60a5fa; font-size:0.85rem; word-break:break-all; }
         .pr-controls { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
         .gd-logo { text-align:center; margin-bottom:8px; }
         .gd-logo img { max-height:64px; }
@@ -614,7 +618,7 @@ const PRESENTATIONS = {
       { icon:"🛠️", title:"نصائح احترافية", points:["✅ اكتب بالعربي بوضوح + أضف كلمات إنجليزية للستايل.","✅ كرّر وأعد التوليد لتحسين النتيجة.","✅ استخدم النفي: «بدون تشويه، بدون أيدي إضافية».","✅ ثبّت القياس والستايل عبر التجارب."] },
       { icon:"🚀", title:"أمثلة حية متقدمة", points:["نص←صورة: «مقدّم نشرة أخبار عربي، استوديو 8K، إضاءة درامية».","صورة←فيديو: صورة مراسل ← «walk and talk, newsroom background».","نص←فيديو: «تقرير عن بيئة الشارقة، ستايل وثائقي هادئ»."] },
       { icon:"📺", title:"فيديو شامل (الختام)", type:"video", video:"https://notebooklm.google.com/notebook/2892497a-4951-4ef3-ae74-c3fc2a1a29fb/artifact/2336c161-7770-4184-ab21-f330557aa3b1?utm_source=nlm_web_share&utm_medium=google_oo&utm_campaign=art_share_1&utm_content=&utm_smc=nlm_web_share_google_oo_art_share_1_", points:["شاهدوا الفيديو الشامل اللي يجمع كل اللي تعلمناه اليوم 🎬"] },
-      { icon:"🏆", title:"رسالة أخيرة", points:["كل محتوى رائع يبدأ ببرومبت ذكي.","الكابتن الناجح يتعلّم، يجرب، ويحسّن.","تحدّى نفسك: صمّم برومبتك الخاص اليوم! 🚀"] }
+      { icon:"🏆", title:"رسالة أخيرة", points:["كل محتوى رائع يبدأ ببرومبت ذكي.","الكابتن الناجح يتعلّم، يجرب، ويحسّن.","تحدّى نفسك: صمّم برومبتك الخاص اليوم! 🚀"], qr:"https://game-l9cs.onrender.com/tools.html" }
     ]
   }
 };
@@ -2467,7 +2471,14 @@ function renderPresentationScreen(p) {
             (slide.points ? `<div class="pr-video-cap">${(slide.points||[]).map(pt=>`<div>${pt}</div>`).join('')}</div>` : '') +
             `<button class="btn btn-gold" style="margin-top:14px;" onclick="window.open('tools.html','_blank')">🔗 روابط الأدوات (QR)</button>`;
     } else {
-        pts.innerHTML = (slide.points || []).map(pt => `<li>${pt}</li>`).join('');
+        let html = (slide.points || []).map(pt => `<li>${pt}</li>`).join('');
+        if(slide.qr) {
+            html += `<div class="pr-qr-card">` +
+                `<img class="pr-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(slide.qr)}" alt="QR">` +
+                `<div class="pr-qr-cap">📲 امسح الكود واحفظ روابط الأدوات للأبد:<br><span class="pr-qr-url">${slide.qr}</span></div>` +
+                `</div>`;
+        }
+        pts.innerHTML = html;
     }
     document.getElementById('pr-counter').textContent = `${p.index + 1} / ${p.total || pres.slides.length}`;
     let bar = document.getElementById('pr-progress-bar');
