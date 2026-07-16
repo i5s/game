@@ -10,10 +10,14 @@
     font-family: 'Segoe UI', Tahoma, system-ui, sans-serif;
     background: radial-gradient(circle at 50% 25%, #15324f, #0a1622);
     color:#fff; min-height:100vh; padding:32px 20px;
-    display:flex; flex-direction:column; align-items:center; gap:14px;
+    display:flex; flex-direction:column; align-items:center; gap:18px;
   }
   h1 { font-size:2rem; text-align:center; }
-  .sub { color:rgba(255,255,255,0.7); font-size:1.05rem; text-align:center; margin-bottom:8px; }
+  .sub { color:rgba(255,255,255,0.7); font-size:1.05rem; text-align:center; margin-bottom:4px; }
+  .section-title {
+    width:100%; max-width:1100px; font-size:1.4rem; margin-top:14px;
+    border-bottom:2px solid rgba(255,255,255,0.15); padding-bottom:6px;
+  }
   .grid {
     display:grid; grid-template-columns:repeat(4, 1fr); gap:20px;
     width:100%; max-width:1100px;
@@ -21,40 +25,137 @@
   .card {
     background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
     border-radius:18px; padding:18px 14px; display:flex; flex-direction:column;
-    align-items:center; gap:12px; text-decoration:none; color:#fff;
+    align-items:center; gap:10px; text-decoration:none; color:#fff;
     transition:transform .2s, background .2s;
   }
   .card:hover { transform:translateY(-4px); background:rgba(255,255,255,0.09); }
-  .card img { width:200px; height:200px; background:#fff; border-radius:12px; padding:6px; }
-  .card .name { font-size:1.15rem; font-weight:600; }
-  .card .url { color:#60a5fa; font-size:0.95rem; word-break:break-all; }
+  .card img {
+    width:160px; height:160px; background:#fff; border-radius:12px; padding:6px;
+  }
+  .card .name { font-size:1.1rem; font-weight:600; text-align:center; }
+  .card .url { color:#60a5fa; font-size:0.9rem; word-break:break-all; text-align:center; }
+  .card .feat {
+    font-size:0.82rem; color:rgba(255,255,255,0.72); text-align:center; line-height:1.5;
+  }
   @media (max-width:820px){ .grid { grid-template-columns:repeat(2, 1fr); } }
 </style>
 </head>
 <body>
+
   <h1>🛠️ أدوات الذكاء الاصطناعي</h1>
   <p class="sub">امسح الكود بالكاميرا أو اضغط على الأداة لتدخلها مباشرة</p>
+
+  <!-- ===== الأدوات الأساسية ===== -->
+  <div class="section-title">⭐ الأدوات الأساسية</div>
   <div class="grid">
     <a class="card" href="https://chat.openai.com/" target="_blank" rel="noopener">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=https%3A%2F%2Fchat.openai.com%2F" alt="ChatGPT QR">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fchat.openai.com%2F" alt="ChatGPT QR">
       <div class="name">💬 شات جي بي تي (ChatGPT)</div>
       <div class="url">chat.openai.com</div>
+      <div class="feat">محادثة وكتابة وحل واجبات. المجاني: عدد رسائل محدود يومياً بـ GPT-4o وغير محدود بـ GPT-4o-mini.</div>
     </a>
     <a class="card" href="https://gemini.google.com/" target="_blank" rel="noopener">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=https%3A%2F%2Fgemini.google.com%2F" alt="Gemini QR">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fgemini.google.com%2F" alt="Gemini QR">
       <div class="name">✨ جيميناي (Gemini)</div>
       <div class="url">gemini.google.com</div>
+      <div class="feat">محادثة سريعة من قوقل. مجاني بالكامل مع حساب قوقل، يفهم الصور والملفات.</div>
     </a>
     <a class="card" href="https://labs.google/" target="_blank" rel="noopener">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=https%3A%2F%2Flabs.google%2F" alt="Google Labs QR">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Flabs.google%2F" alt="Google Labs QR">
       <div class="name">🧪 جوجل لابس (Google Labs)</div>
       <div class="url">labs.google</div>
+      <div class="feat">تجارب وأدوات قوقل التجريبية (صور، موسيقى، كتابة). مجاني مع حساب قوقل.</div>
     </a>
     <a class="card" href="https://studio.abacus.ai/" target="_blank" rel="noopener">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=https%3A%2F%2Fstudio.abacus.ai%2F" alt="Abacus AI Studio QR">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fstudio.abacus.ai%2F" alt="Abacus AI Studio QR">
       <div class="name">🤖 استوديو آباكوس (Abacus)</div>
       <div class="url">studio.abacus.ai</div>
+      <div class="feat">بناء وكلاء AI وجداول وصور. فيه رصيد مجاني يومي يتجدد كل 24 ساعة.</div>
     </a>
+  </div>
+
+  <!-- ===== أدوات إضافية ===== -->
+  <div class="section-title">➕ أدوات إضافية</div>
+  <div class="grid">
+
+    <!-- صور -->
+    <a class="card" href="https://bing.com/create" target="_blank" rel="noopener">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fbing.com%2Fcreate" alt="Bing Image Creator QR">
+      <div class="name">🖼️ بينج (Bing Image Creator)</div>
+      <div class="url">bing.com/create</div>
+      <div class="feat">صور من النص (DALL·E 3). 15 توليد سريع كل يوم، وبعدها بطيء لكن مجاني. الأفضل والأكثر أماناً للأطفال.</div>
+    </a>
+    <a class="card" href="https://www.creen.ai/" target="_blank" rel="noopener">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fwww.creen.ai%2F" alt="Creen AI QR">
+      <div class="name">🎨 كرين (Creen AI)</div>
+      <div class="url">creen.ai</div>
+      <div class="feat">صور وفيديو بدون تسجيل دخول. نماذج كثيرة، جودة حتى 4K، حصة يومية مجانية كبيرة.</div>
+    </a>
+    <a class="card" href="https://craiyon.com/" target="_blank" rel="noopener">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fcraiyon.com%2F" alt="Craiyon QR">
+      <div class="name">🌈 كرايون (Craiyon)</div>
+      <div class="url">craiyon.com</div>
+      <div class="feat">توليد صور مجاني 100% بدون حساب. مناسب للتجربة السريعة والمسلية.</div>
+    </a>
+    <a class="card" href="https://autodraw.com/" target="_blank" rel="noopener">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fautodraw.com%2F" alt="AutoDraw QR">
+      <div class="name">✏️ أوتو درو (AutoDraw)</div>
+      <div class="url">autodraw.com</div>
+      <div class="feat">رسم ذكي من قوقل للأطفال 5-10 سنوات. يحوّل رسمتك إلى شكل مرتب تلقائياً. مجاني بلا حساب.</div>
+    </a>
+
+    <!-- فيديو -->
+    <a class="card" href="https://pika.art/" target="_blank" rel="noopener">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fpika.art%2F" alt="Pika QR">
+      <div class="name">🎬 بايكا (Pika)</div>
+      <div class="url">pika.art</div>
+      <div class="feat">نص→فيديو وصورة→فيديو. 150 رصيد كل شهر تتجدد تلقائياً، جودة 1080p، بدون علامة مائية.</div>
+    </a>
+    <a class="card" href="https://lumalabs.ai/dream-machine" target="_blank" rel="noopener">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Flumalabs.ai%2Fdream-machine" alt="Luma Dream Machine QR">
+      <div class="name">🌟 لوما (Luma Dream Machine)</div>
+      <div class="url">lumalabs.ai/dream-machine</div>
+      <div class="feat">صورة→فيديو واقعي. 30 توليد مجاني كل شهر، جودة 1080p، بدون علامة مائية.</div>
+    </a>
+    <a class="card" href="https://klingai.com/" target="_blank" rel="noopener">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fklingai.com%2F" alt="Kling AI QR">
+      <div class="name">⚡ كِلينغ (Kling AI)</div>
+      <div class="url">klingai.com</div>
+      <div class="feat">أفضل حركة واقعية. 66 رصيد يومي يتجدد كل 24 ساعة، جودة 720p، بدون علامة مائية.</div>
+    </a>
+    <a class="card" href="https://capcut.com/" target="_blank" rel="noopener">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fcapcut.com%2F" alt="CapCut QR">
+      <div class="name">✂️ كاب كات (CapCut)</div>
+      <div class="url">capcut.com</div>
+      <div class="feat">محرر فيديو كامل مجاني. تصدير حتى 4K، بدون علامة مائية، فيه أدوات AI (ترجمة، خلفية).</div>
+    </a>
+
+    <!-- تعلّم -->
+    <a class="card" href="https://teachablemachine.withgoogle.com/" target="_blank" rel="noopener">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fteachablemachine.withgoogle.com%2F" alt="Teachable Machine QR">
+      <div class="name">🧠 تيتشبل مشين (Teachable Machine)</div>
+      <div class="url">teachablemachine.withgoogle.com</div>
+      <div class="feat">تدريب نموذج AI بنفسك بالكاميرا/الصوت. مجاني 100% بلا حساب — يفهمون مفهوم الذكاء عملياً.</div>
+    </a>
+    <a class="card" href="https://quickdraw.withgoogle.com/" target="_blank" rel="noopener">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fquickdraw.withgoogle.com%2F" alt="Quick Draw QR">
+      <div class="name">✍️ كويك درو (Quick Draw)</div>
+      <div class="url">quickdraw.withgoogle.com</div>
+      <div class="feat">لعبة رسم يخمّنها الذكاء. للأطفال 6-12 سنة. مجاني بلا حساب.</div>
+    </a>
+    <a class="card" href="https://scratch.mit.edu/" target="_blank" rel="noopener">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fscratch.mit.edu%2F" alt="Scratch QR">
+      <div class="name">🐱 سكراتش (Scratch)</div>
+      <div class="url">scratch.mit.edu</div>
+      <div class="feat">برمجة بالكتل مع إضافات ذكاء. مجاني دائماً من معهد ماساتشوستس، للأطفال 8-14 سنة.</div>
+    </a>
+    <a class="card" href="https://notebooklm.google.com/" target="_blank" rel="noopener">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fnotebooklm.google.com%2F" alt="NotebookLM QR">
+      <div class="name">📚 نوت بوك إل إم (NotebookLM)</div>
+      <div class="url">notebooklm.google.com</div>
+      <div class="feat">تلخيص وبودكاست من مصادرك. مجاني بالكامل مع حساب قوقل — نفس أداة الفيديو.</div>
+    </a>
+
   </div>
 </body>
 </html>
